@@ -1,7 +1,5 @@
 
-pip install threading
 pip install apscheduler
-pip install gevent
 pip install pymysql
 pip install DBUtils
 pip install redis
