@@ -1,14 +1,17 @@
-import random
 import json
+import time
+import random
 import traceback
 from urllib import request
+from apscheduler import events
+from apscheduler.schedulers.blocking import BlockingScheduler
 
-from jb_common import *
-from redis_repository import *
+from jubi_common import cm_monitor
+from jubi_common import RedisPool
+from jubi_common import tickers_key
 
 headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 
                     (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'''}
-
 
 class TickerCollector:
     """
@@ -80,4 +83,30 @@ class TickerCollector:
 
         return tickers
 
-    pass
+
+def err_listener(event):
+    if event.exception:
+        print('The job crashed with exception : {0}'.format(event.exception))
+
+
+def mis_listener(event):
+    print("Collection job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
+
+
+if __name__ == '__main__':
+    tc = TickerCollector()
+
+    conf = {
+        'apscheduler.job_defaults.coalesce': 'false',
+        'apscheduler.job_defaults.max_instances': '1'
+    }
+    sched = BlockingScheduler(conf)
+    sched.add_job(tc.collect, 'cron', second='0/5')
+    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
+
+    try:
+        sched.start()
+    except (KeyboardInterrupt, SystemExit):
+        exstr = traceback.format_exc()
+        print(exstr)
