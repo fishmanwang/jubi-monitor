@@ -1,6 +1,7 @@
+#coding=utf-8
 import pymysql
 import traceback
-from mysql_connection import ConnectionPool
+from jubi_common import ConnectionPool
 
 from jubi_common import RedisPool
 from jubi_common import tickers_key

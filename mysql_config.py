@@ -1,4 +1,4 @@
-#-*- coding: UTF-8 -*-
+#coding=utf-8
 '''
 @描述：数据库配置信息
 @作者：tjwang
