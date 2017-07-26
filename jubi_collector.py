@@ -10,6 +10,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from jubi_common import cm_monitor
 from jubi_common import RedisPool
 from jubi_common import tickers_key
+from jubi_common import logger
 
 headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 
                     (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'''}
@@ -41,19 +42,19 @@ class TickerCollector:
             ps.append([coin, data])
         tn = int(time.time())
         keynum = tn - tn % 5
-        print(keynum)
+        logger.debug(keynum)
         try:
             timekey = TickerCollector.ts_prefix + str(keynum)
             if len(ps) == 0:
-                print("emtpy ticker : %s" % timekey)
+                logger.debug("emtpy ticker : %s" % timekey)
             if RedisPool.conn.set(timekey, ps, ex=3600, nx=True) == 1:
                 RedisPool.conn.rpush(tickers_key, timekey)
             else:
-                print('value exists with key : %s' % timekey)
+                logger.debug('value exists with key : %s' % timekey)
         except Exception as e:
             RedisPool.conn.delete(timekey)
             exstr = traceback.format_exc(e)
-            print(exstr)
+            logger.error(exstr)
 
     @cm_monitor("TickerCollector.__get_ticker")
     def __get_tickers(self, pk):
@@ -70,7 +71,7 @@ class TickerCollector:
             with request.urlopen(req, timeout=3) as resp:
                 d = json.loads(resp.read().decode())
                 if len(d) < 20:
-                    print("Error response allticker : {}".format(d))
+                    logger.warning("Error response allticker : {}".format(d))
                 for item in d.items():
                     coin = item[0]
                     d = item[1]
@@ -80,18 +81,18 @@ class TickerCollector:
 
         except Exception as e:
             exstr = traceback.format_exc(e)
-            print(exstr)
+            logger.error(exstr)
 
         return tickers
 
 
 def err_listener(event):
     if event.exception:
-        print('The job crashed with exception : {0}'.format(event.exception))
+        logger.error('The job crashed with exception : {0}'.format(event.exception))
 
 
 def mis_listener(event):
-    print("Collection job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
+    logger.warning("Collection job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
 
 
 if __name__ == '__main__':
@@ -110,4 +111,4 @@ if __name__ == '__main__':
         sched.start()
     except (KeyboardInterrupt, SystemExit):
         exstr = traceback.format_exc()
-        print(exstr)
+        logger.error(exstr)

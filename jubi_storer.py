@@ -6,6 +6,7 @@ from jubi_common import ConnectionPool
 from jubi_common import RedisPool
 from jubi_common import tickers_key
 from jubi_common import cm_monitor
+from jubi_common import logger
 
 class TickerRepository:
     """
@@ -33,7 +34,7 @@ class TickerRepository:
         coin = args[0]
         data = args[1]
         if data is None or len(data) == 0:
-            print("无效的ticker数据{0}".format(data))
+            logger.debug("无效的ticker数据{0}".format(data))
             return
 
         tn = TickerRepository.get_coin_ticker_table_name(coin)
@@ -46,10 +47,15 @@ class TickerRepository:
                 db.conn.commit()
         except pymysql.err.ProgrammingError as pe:
             tname = TickerRepository.get_coin_ticker_table_name(coin)
-            self.__create_table(tname)
+            try:
+                self.__create_table(tname)
+            except Exception as e2:
+                exstr = traceback.format_exc()
+                logger.warning(exstr)
+
         except Exception as e:
             exstr = traceback.format_exc()
-            print(exstr)
+            logger.error(exstr)
 
 
 class TickerStorer:
@@ -77,9 +83,9 @@ class TickerStorer:
                 except Exception as e:
                     RedisPool.conn.lpush(tickers_key, key)
                     exstr = traceback.format_exc()
-                    print(exstr)
+                    logger.error(exstr)
         else:
-            print("data is is None associated by %s" % key)
+            logger.debug("data is is None associated by %s" % key)
 
 
 if __name__ == '__main__':

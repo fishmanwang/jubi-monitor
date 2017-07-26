@@ -1,9 +1,12 @@
 #coding=utf-8
+import sys
 import time
 import pymysql
 import redis
+import logging
 from functools import wraps
 from DBUtils.PooledDB import PooledDB
+from logging.handlers import RotatingFileHandler
 
 import mysql_config as config
 
@@ -21,7 +24,12 @@ def cm_monitor(text):
             start = int(time.time() * 1000)
             val = f(self, *args, **kw)
             end = int(time.time() * 1000)
-            print("{0} time used: {1}".format(text, (end - start)))
+            u = (end - start)
+            if u < 1000:
+                logger.debug("{0} time used: {1}".format(text, u))
+            else:
+                logger.warning("{0} time used: {1}".format(text, u))
+
             return val
         return wrap
     return decorate
@@ -51,3 +59,17 @@ class ConnectionPool:
 
 class RedisPool:
     conn = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, max_connections=10)
+
+
+logpath = sys.argv[1]
+
+__formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+__fh = RotatingFileHandler(logpath + "/jubi.log", maxBytes=1024*1024*10, backupCount=3)
+__fh.setLevel(logging.DEBUG)
+__fh.setFormatter(__formatter)
+
+logger = logging.getLogger("jubi")
+logger.setLevel(logging.INFO)
+logger.addHandler(__fh)
+logger.propagate = True
