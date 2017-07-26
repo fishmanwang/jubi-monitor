@@ -88,7 +88,9 @@ class TickerCollector:
 
 def err_listener(event):
     if event.exception:
+        exstr = traceback.format_exc()
         logger.error('The job crashed with exception : {0}'.format(event.exception))
+        logger.error(exstr)
 
 
 def mis_listener(event):
