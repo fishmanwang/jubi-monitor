@@ -12,6 +12,13 @@ import mysql_config as config
 
 tickers_key = "tickers"
 
+# 操作information_schema连接
+op_conn = pymysql.connect(host=config.DB_HOST, port=config.DB_PORT, user=config.DB_USER, passwd=config.DB_PASSWORD,
+                          db="information_schema", charset="utf8")
+# 普通连接
+conn = pymysql.connect(host=config.DB_HOST, port=config.DB_PORT, user=config.DB_USER, passwd=config.DB_PASSWORD,
+                       db=config.DB_DBNAME, charset="utf8")
+
 def cm_monitor(text):
     """
     类方法(class method)上监控调用时间
@@ -33,6 +40,7 @@ def cm_monitor(text):
             return val
         return wrap
     return decorate
+
 
 class ConnectionPool:
     __pool = None
@@ -57,6 +65,7 @@ class ConnectionPool:
         self.cursor.close()
         self.conn.close()
 
+
 class RedisPool:
     conn = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, max_connections=10)
 
@@ -70,6 +79,6 @@ __fh.setLevel(logging.DEBUG)
 __fh.setFormatter(__formatter)
 
 logger = logging.getLogger("jubi")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(__fh)
 logger.propagate = True

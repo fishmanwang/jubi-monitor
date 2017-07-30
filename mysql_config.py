@@ -11,9 +11,9 @@ DB_HOST = "localhost"
 DB_PORT = 3306
 DB_DBNAME = "jubi"
 DB_USER = "root"
-#DB_PASSWORD = "admin"
+DB_PASSWORD = "admin"
 #DB_PASSWORD = "root"
-DB_PASSWORD = "Pass1234"
+#DB_PASSWORD = "Pass1234"
 
 
 #数据库连接编码
