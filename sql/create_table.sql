@@ -17,6 +17,6 @@ CREATE TABLE jb_coin_increase(
   id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
   coin VARCHAR(16) NOT NULL,
   pk INT NOT NULL,
-  val SMALLINT NOT NULL DEFAULT 0 COMMENT '涨幅',
-  UNIQUE(coin, pk)
+  rate decimal(18,6) NOT NULL DEFAULT 0 COMMENT '涨幅',
+  UNIQUE(pk, coin)
 ) COMMENT = '币值涨幅';
