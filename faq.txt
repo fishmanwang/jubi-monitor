@@ -1,0 +1,10 @@
+1. 为什么分开收集和存储？
+答：仅针对最大限度保证爬取的数据不丢失。
+    可以部署多个收集程序同时收集，将多份数据只留一份保存到数据库，同时希望storer高可用。
+    推荐collector(3) + store(2) 或 collector(2) + store(1)
+
+
+2. 为什么storer从redis中取出来的数据有时为空？
+答：当2台及以上collector(c1,c2)以相同的key向redis插入数据，出现以下情况：
+    c1插入data成功，并添加key进队列 -> c2插入key成功 ->store处理并删除key和data->c2将key插入队列
+        ->store再次取出key，但此时data已被删掉。

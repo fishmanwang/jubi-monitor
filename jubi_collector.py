@@ -80,7 +80,7 @@ class TickerCollector:
                     tickers.append((coin, data))
 
         except Exception as e:
-            exstr = traceback.format_exc(e)
+            exstr = traceback.format_exc()
             logger.error(exstr)
 
         return tickers
