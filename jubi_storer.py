@@ -1,4 +1,5 @@
 #coding=utf-8
+import pymysql
 import traceback
 from jubi_common import ConnectionPool
 
@@ -54,6 +55,8 @@ class TickerStorer:
                         ts.append((pk, coin, price))
                     self.rep.add_ticker(ts)
                     RedisPool.conn.delete(key)
+                except pymysql.err.IntegrityError as e:
+                    pass
                 except Exception as e:
                     RedisPool.conn.lpush(tickers_key, key)
                     exstr = traceback.format_exc()
