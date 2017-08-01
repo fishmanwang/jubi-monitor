@@ -62,6 +62,7 @@ class TickerRepository(object):
         cursor = conn.cursor()
 
         next_time = get_next_time(time)
+        logger.debug("next_time : " + str(next_time))
         cursor.execute('select pk, price from jb_coin_ticker where coin=%s and pk >= %s limit 1', (coin, next_time))
         if cursor.rowcount == 0:
             return ret
