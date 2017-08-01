@@ -178,10 +178,13 @@ def work():
         for c in cs:
             coin = c[0]
             last_pk = TickerIncRepository.get_last_item(coin)
+            logger.debug("last_pk : " + str(last_pk))
             dt = TickerRepository.get_next_minute_ticker(coin, last_pk)
+            logger.debug("dt : " + str(dt))
             if len(dt) == 0:
                 continue
             item = get_calculated_item(coin_origin_price_map, dt)
+            logger.debug("item : " + str(item))
             TickerIncRepository.add_item(item)
             has_item = True
         if not has_item:
