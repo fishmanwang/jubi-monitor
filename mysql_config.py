@@ -7,7 +7,7 @@
 '''
 
 #数据库信息
-DB_HOST = "localhost"
+DB_HOST = "39.108.11.6"
 DB_PORT = 3306
 DB_DBNAME = "jubi"
 DB_USER = "root"
