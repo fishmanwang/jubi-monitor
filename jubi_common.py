@@ -18,6 +18,7 @@ op_conn = pymysql.connect(host=config.DB_HOST, port=config.DB_PORT, user=config.
 # 普通连接
 conn = pymysql.connect(host=config.DB_HOST, port=config.DB_PORT, user=config.DB_USER, passwd=config.DB_PASSWORD,
                        db=config.DB_DBNAME, charset="utf8")
+conn.autocommit(True)
 
 def monitor(text):
     """
@@ -80,7 +81,7 @@ class ConnectionPool:
                                    setsession=config.DB_SET_SESSION,
                                    host=config.DB_HOST, port=config.DB_PORT,
                                    user=config.DB_USER, passwd=config.DB_PASSWORD,
-                                   db=config.DB_DBNAME, use_unicode=False, charset=config.DB_CHARSET);
+                                   db=config.DB_DBNAME, use_unicode=False, charset=config.DB_CHARSET)
         return self.__pool.connection()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -105,7 +106,7 @@ __sh.setLevel(logging.DEBUG)
 __sh.setFormatter(__formatter)
 
 logger = logging.getLogger("jubi")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(__fh)
 logger.addHandler(__sh)
 logger.propagate = True
