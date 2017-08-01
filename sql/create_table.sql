@@ -14,11 +14,12 @@ CREATE TABLE `jb_coin_ticker` (
   UNIQUE(`pk`, `coin`)
 ) COMMENT='行情表';
 
-DROP TABLE IF EXISTS jb_coin_increase;
-CREATE TABLE jb_coin_increase(
-  id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-  coin VARCHAR(16) NOT NULL,
-  pk INT NOT NULL,
-  rate DECIMAL(18,6) NOT NULL DEFAULT 0 COMMENT '涨幅',
-  UNIQUE(pk, coin)
-) COMMENT = '币值涨幅';
+DROP TABLE IF EXISTS jb_coin_rate;
+CREATE TABLE `jb_coin_rate` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `coin` VARCHAR(16) NOT NULL,
+  `pk` INT(11) NOT NULL,
+  `rate` DECIMAL(18,6) NOT NULL DEFAULT '0.000000' COMMENT '涨幅',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `pk` (`pk`,`coin`)
+) ENGINE=INNODB AUTO_INCREMENT=415395 DEFAULT CHARSET=utf8 COMMENT='币值涨幅';

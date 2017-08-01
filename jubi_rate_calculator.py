@@ -107,7 +107,7 @@ class TickerIncRepository(object):
         :return: pk 
         """
         cursor = conn.cursor()
-        cursor.execute('select pk from jb_coin_increase where coin=%s order by pk desc limit 1', (coin,))
+        cursor.execute('select pk from jb_coin_rate where coin=%s order by pk desc limit 1', (coin,))
         if cursor.rowcount == 0:
             return 0
         raw = cursor.fetchone()
@@ -124,7 +124,7 @@ class TickerIncRepository(object):
         if item is None or len(item) == 0:
             return
         cursor = conn.cursor()
-        cursor.execute("insert into jb_coin_increase(coin, pk, rate) values(%s, %s, %s) ", item)
+        cursor.execute("insert into jb_coin_rate(coin, pk, rate) values(%s, %s, %s) ", item)
         conn.commit()
         cursor.close()
 
