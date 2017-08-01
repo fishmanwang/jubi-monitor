@@ -58,6 +58,7 @@ class TickerStorer:
                 except pymysql.err.IntegrityError as e:
                     exstr = traceback.format_exc()
                     logger.error(exstr)
+                    RedisPool.conn.delete(key)
                 except Exception as e:
                     RedisPool.conn.lpush(tickers_key, key)
                     exstr = traceback.format_exc()

@@ -42,33 +42,6 @@ def get_next_pk(tb_name, time):
 
     return val
 
-def get_tickers_table_name():
-    """
-    获取所有行情表表名
-    :return: 
-    """
-    c = op_conn.cursor()
-    c.execute('SELECT table_name FROM information_schema.tables WHERE table_schema = %s and table_name like %s',
-              ('jubi', '%ticker'))
-    raws = c.fetchall()
-    c.close()
-    return [raw[0] for raw in raws]
-
-def get_all_coins():
-    """
-    获取所有币
-    :return: 
-    """
-    tbs = get_tickers_table_name()
-    if len(tbs) == 0:
-        return []
-    coins = []
-    for tb in tbs:
-        l = tb.index("_") + 1
-        r = tb.rindex("_")
-        coins.append(tb[l:r])
-    return coins
-
 class TickerRepository(object):
 
     def __init__(self, pool):
@@ -84,13 +57,12 @@ class TickerRepository(object):
         :param time: 
         :return: 
         """
-        tb_name = get_coin_ticker_table_name(coin)
 
         ret = ()
         cursor = conn.cursor()
 
         next_time = get_next_time(time)
-        cursor.execute('select pk, last from {} where pk >= %s limit 1'.format(tb_name), (next_time, ))
+        cursor.execute('select pk, price from jb_coin_ticker where coin=%s and pk >= %s limit 1', (coin, next_time))
         if cursor.rowcount == 0:
             return ret
 
@@ -102,15 +74,15 @@ class TickerRepository(object):
         return ret
 
     @staticmethod
-    def get_price(tb_name, time):
+    def get_price(coin, time):
         """
         获取指定时间的价格。如果不存在，则向后获取
-        :param tb_name: 币种表名
+        :param coin: 币种
         :param time: 时间
         :return: 
         """
         cursor = conn.cursor()
-        cursor.execute("select last from {} where pk>= %s limit 1".format(tb_name), (time, ))
+        cursor.execute("select price from jb_coin_ticker where coin=%s and pk>= %s limit 1", (coin, time))
         if cursor.rowcount == 0:
             return 0
         raw = cursor.fetchone()
@@ -162,8 +134,6 @@ def get_origin_time(time):
     """
     return time - (time % 86400)
 
-def get_coin_ticker_table_name(coin):
-    return 'jb_' + coin + "_ticker"
 
 def get_and_set_origin_price(m, coin, time):
     """
@@ -175,9 +145,8 @@ def get_and_set_origin_price(m, coin, time):
     """
     t = get_origin_time(time)
     d = m.get(coin)
-    tb_name = get_coin_ticker_table_name(coin)
     if d is None or d[0] != t:
-        d = (t, TickerRepository.get_price(tb_name, t))
+        d = (t, TickerRepository.get_price(coin, t))
         m[coin] = d
     return d[1]
 
@@ -201,12 +170,13 @@ def get_calculated_item(m, dt):
 
 @monitor("work")
 def work():
-    coins = get_all_coins()
+    cs = get_all_coins()
     # 日开盘价
     coin_origin_price_map = {}
     while True:
         has_item = False  # 判断是否还有需要加入的项
-        for coin in coins:
+        for c in cs:
+            coin = c[0]
             last_pk = TickerIncRepository.get_last_item(coin)
             dt = TickerRepository.get_next_minute_ticker(coin, last_pk)
             if len(dt) == 0:
@@ -229,17 +199,18 @@ def mis_listener(event):
 
 
 if __name__ == '__main__':
-    conf = {
-        'apscheduler.job_defaults.coalesce': 'false',
-        'apscheduler.job_defaults.max_instances': '1'
-    }
-    sched = BlockingScheduler(conf)
-    sched.add_job(work, 'cron', second='5')
-    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
-    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
-
-    try:
-        sched.start()
-    except (KeyboardInterrupt, SystemExit):
-        exstr = traceback.format_exc()
-        logger.error(exstr)
+    work()
+    # conf = {
+    #     'apscheduler.job_defaults.coalesce': 'false',
+    #     'apscheduler.job_defaults.max_instances': '1'
+    # }
+    # sched = BlockingScheduler(conf)
+    # sched.add_job(work, 'cron', second='5')
+    # sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    # sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
+    #
+    # try:
+    #     sched.start()
+    # except (KeyboardInterrupt, SystemExit):
+    #     exstr = traceback.format_exc()
+    #     logger.error(exstr)

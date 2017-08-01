@@ -100,7 +100,23 @@ __fh = RotatingFileHandler(logpath + "/jubi.log", maxBytes=1024*1024*10, backupC
 __fh.setLevel(logging.DEBUG)
 __fh.setFormatter(__formatter)
 
+__sh = logging.StreamHandler()
+__sh.setLevel(logging.DEBUG)
+__sh.setFormatter(__formatter)
+
 logger = logging.getLogger("jubi")
 logger.setLevel(logging.INFO)
 logger.addHandler(__fh)
+logger.addHandler(__sh)
 logger.propagate = True
+
+def get_all_coins():
+    """
+    获取所有币信息
+    :return: [(code, name)]
+    """
+    cursor = conn.cursor()
+    cursor.execute('select code, name from jb_coin')
+    ds = cursor.fetchall()
+    cursor.close()
+    return ds
