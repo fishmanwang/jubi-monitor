@@ -9,6 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 __pool = ConnectionPool()
 
+
 def trim_to_minute(time):
     """
     将时间向上裁剪至分钟整点
@@ -17,30 +18,17 @@ def trim_to_minute(time):
     """
     return time - (time % 60)
 
+
 def get_next_time(time):
     """
     获取指定时间之后的整点一分钟
     :param time: 
     :return: 
     """
+    if time == 0:
+        return 0
     return trim_to_minute(time) + 60
 
-def get_next_pk(tb_name, time):
-    """
-    获取下一个取值点(比指定时间大于等于一分钟第一个有值的pk)
-    :param time: 上一次的取值点
-    :return: 
-    """
-    next_time = get_next_time(time)
-    val = 0
-    # 大于等于下一分钟
-    cursor = conn.cursor()
-    cursor.execute("select pk from {} where pk >= %s limit 1".format(tb_name), (next_time,))
-    if cursor.rowcount > 0:
-        val = cursor.fetchone()[0]
-    cursor.close()
-
-    return val
 
 class TickerRepository(object):
 
@@ -128,13 +116,14 @@ class TickerIncRepository(object):
         conn.commit()
         cursor.close()
 
+
 def get_origin_time(time):
     """
-    获取每日初始时间    
+    获取每日初始时间，东八区减8小时    
     :param time: 
     :return: 
     """
-    return time - (time % 86400)
+    return time - (time % 86400) - 28800
 
 
 def get_and_set_origin_price(m, coin, time):
@@ -151,6 +140,7 @@ def get_and_set_origin_price(m, coin, time):
         d = (t, TickerRepository.get_price(coin, t))
         m[coin] = d
     return d[1]
+
 
 def get_calculated_item(m, dt):
     """
