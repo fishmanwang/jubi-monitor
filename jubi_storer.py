@@ -54,7 +54,7 @@ class TickerStorer:
                         price = data[5]
                         ts.append((pk, coin, price))
                     self.rep.add_ticker(ts)
-                    RedisPool.conn.delete(key)
+                    RedisPool.conn.expire(key, 60)  # 60s后过期，而不是直接删除，避免重复插入
                 except pymysql.err.IntegrityError as e:
                     exstr = traceback.format_exc()
                     logger.error(exstr)
