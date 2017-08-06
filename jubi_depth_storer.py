@@ -61,13 +61,19 @@ def __store(pk, coin, asks, bids):
     ps = __infer_plus(price, asks)
     ms = __infer_minus(price, bids)
 
-    val = (pk, coin, price) + ps + ms
+    rate = 0
+    pt = ps[len(ps)-1]
+    mt = ms[len(ms)-1]
+    if pt != 0 and mt != 0:
+        rate = round(mt / pt, 2)
+
+    val = (pk, coin, price) + ps + ms + (rate,)
 
     cursor.execute("insert into jb_coin_depth(pk, coin, asks, bids) VALUES (%s, %s, %s, %s)",
                    (pk, coin, str(asks), str(bids)))
     cursor.execute("insert into jb_coin_depth_rate(pk, coin, price, three_p, five_p, eight_p,\
-                    ten_p, twenty_p, three_m, five_m, eight_m, ten_m, twenty_m) values \
-                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", val)
+                    ten_p, twenty_p, total_p, three_m, five_m, eight_m, ten_m, twenty_m, total_m, rate) values \
+                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", val)
 
     conn.commit()
     cursor.close()
@@ -91,12 +97,14 @@ def __infer_plus(price, asks):
     eight_p = 0
     ten_p = 0
     twenty_p = 0
+    total_p = 0
 
     max_price = asks[0][0]
 
     for ask in asks:
         p = ask[0]  # 委单价
         v = ask[1]  # 委单量
+        total_p += p * v
         if max_price >= twenty and p <= twenty:
             twenty_p += p * v
         if max_price >= ten and p <= ten:
@@ -108,7 +116,7 @@ def __infer_plus(price, asks):
         if max_price >= three and p <= three:
             three_p += p * v
 
-    ret = (round(three_p, 6), round(five_p, 6), round(eight_p, 6), round(ten_p, 6), round(twenty_p, 6))
+    ret = (int(three_p), int(five_p), int(eight_p), int(ten_p), int(twenty_p), int(total_p))
     return ret
 
 
@@ -130,12 +138,14 @@ def __infer_minus(price, bids):
     eight_m = 0
     ten_m = 0
     twenty_m = 0
+    total_m = 0
 
     min_price = bids[len(bids) - 1][0]
 
     for bid in bids:
         p = bid[0]  # 委单价
         v = bid[1]  # 委单量
+        total_m += p * v
         if min_price <= twenty and p >= twenty:
             twenty_m += p * v
         if min_price <= ten and p >= ten:
@@ -147,7 +157,7 @@ def __infer_minus(price, bids):
         if min_price <= three and p >= three:
             three_m += p * v
 
-    ret = (round(three_m, 6), round(five_m, 6), round(eight_m, 6), round(ten_m, 6), round(twenty_m, 6))
+    ret = (int(three_m), int(five_m), int(eight_m), int(ten_m), int(twenty_m), int(total_m))
     return ret
 
 

@@ -45,10 +45,13 @@ CREATE TABLE jb_coin_depth_rate(
   eight_p INT NOT NULL DEFAULT 0,
   ten_p INT NOT NULL DEFAULT 0,
   twenty_p INT NOT NULL DEFAULT 0,
+  total_p INT NOT NULL DEFAULT 0 COMMENT '涨总和',
   three_m INT NOT NULL DEFAULT 0 COMMENT '跌3%所需金额',
   five_m INT NOT NULL DEFAULT 0,
   eight_m INT NOT NULL DEFAULT 0,
   ten_m INT NOT NULL DEFAULT 0,
   twenty_m INT NOT NULL DEFAULT 0,
+  total_m INT NOT NULL DEFAULT 0 COMMENT '跌总和',
+  rate DECIMAL(8, 2) NOT NULL DEFAULT 0 COMMENT '跌对涨比率,越大越好',
   UNIQUE(pk, coin)
 ) COMMENT='涨跌幅度统计';
