@@ -1,4 +1,5 @@
 import time
+import decimal
 import pymysql
 import traceback
 from jubi_common import conn
@@ -10,6 +11,7 @@ from jubi_common import logger
 
 # redis中收集深度的队列的key
 depth_coll_queue = 'depth_coll_queue'
+conn.autocommit(False)
 
 
 def work():
@@ -49,10 +51,104 @@ def __process_data(pk, coin, val):
 def __store(pk, coin, asks, bids):
     conn.connect()
     cursor = conn.cursor()
+
+    cursor.execute("select price from jb_coin_ticker where coin=%s and pk <= %s ORDER BY pk DESC limit 1", (coin, pk))
+    if cursor.rowcount == 0:
+        conn.commit()
+        return
+
+    price = float(cursor.fetchone()[0])
+    ps = __infer_plus(price, asks)
+    ms = __infer_minus(price, bids)
+
+    val = (pk, coin, price) + ps + ms
+
     cursor.execute("insert into jb_coin_depth(pk, coin, asks, bids) VALUES (%s, %s, %s, %s)",
                    (pk, coin, str(asks), str(bids)))
+    cursor.execute("insert into jb_coin_depth_rate(pk, coin, price, three_p, five_p, eight_p,\
+                    ten_p, twenty_p, three_m, five_m, eight_m, ten_m, twenty_m) values \
+                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", val)
+
     conn.commit()
     cursor.close()
+
+
+def __infer_plus(price, asks):
+    """
+    推测涨幅
+    :param price: 当前价格 
+    :param asks: 挂单卖
+    :return: 
+    """
+    three = price * 1.03
+    five = price * 1.05
+    eight = price * 1.08
+    ten = price * 1.1
+    twenty = price * 1.2
+
+    three_p = 0
+    five_p = 0
+    eight_p = 0
+    ten_p = 0
+    twenty_p = 0
+
+    max_price = asks[0][0]
+
+    for ask in asks:
+        p = ask[0]  # 委单价
+        v = ask[1]  # 委单量
+        if max_price >= twenty and p <= twenty:
+            twenty_p += p * v
+        if max_price >= ten and p <= ten:
+            ten_p += p * v
+        if max_price >= eight and p <= eight:
+            eight_p += p * v
+        if max_price>= five and p <= five:
+            five_p += p * v
+        if max_price >= three and p <= three:
+            three_p += p * v
+
+    ret = (round(three_p, 6), round(five_p, 6), round(eight_p, 6), round(ten_p, 6), round(twenty_p, 6))
+    return ret
+
+
+def __infer_minus(price, bids):
+    """
+    推测跌幅
+    :param price: 当前价格 
+    :param bids: 挂单卖
+    :return: 
+    """
+    three = price * 0.97
+    five = price * 0.95
+    eight = price * 0.92
+    ten = price * 0.9
+    twenty = price * 0.8
+
+    three_m = 0
+    five_m = 0
+    eight_m = 0
+    ten_m = 0
+    twenty_m = 0
+
+    min_price = bids[len(bids) - 1][0]
+
+    for bid in bids:
+        p = bid[0]  # 委单价
+        v = bid[1]  # 委单量
+        if min_price <= twenty and p >= twenty:
+            twenty_m += p * v
+        if min_price <= ten and p >= ten:
+            ten_m += p * v
+        if min_price <= eight and p >= eight:
+            eight_m += p * v
+        if min_price <= five and p >= five:
+            five_m += p * v
+        if min_price <= three and p >= three:
+            three_m += p * v
+
+    ret = (round(three_m, 6), round(five_m, 6), round(eight_m, 6), round(ten_m, 6), round(twenty_m, 6))
+    return ret
 
 
 if __name__ == '__main__':

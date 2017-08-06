@@ -33,3 +33,22 @@ CREATE TABLE jb_coin_depth(
   bids TEXT NOT NULL DEFAULT '' COMMENT '买',
   UNIQUE(pk, coin)
 ) COMMENT '深度表';
+
+DROP TABLE IF EXISTS jb_coin_depth_rate;
+CREATE TABLE jb_coin_depth_rate(
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  pk INT NOT NULL,
+  coin VARCHAR(16) NOT NULL,
+  price DECIMAL(18,6) NOT NULL,
+  three_p INT NOT NULL DEFAULT 0 COMMENT '涨3%所需金额',
+  five_p INT NOT NULL DEFAULT 0,
+  eight_p INT NOT NULL DEFAULT 0,
+  ten_p INT NOT NULL DEFAULT 0,
+  twenty_p INT NOT NULL DEFAULT 0,
+  three_m INT NOT NULL DEFAULT 0 COMMENT '跌3%所需金额',
+  five_m INT NOT NULL DEFAULT 0,
+  eight_m INT NOT NULL DEFAULT 0,
+  ten_m INT NOT NULL DEFAULT 0,
+  twenty_m INT NOT NULL DEFAULT 0,
+  UNIQUE(pk, coin)
+) COMMENT='涨跌幅度统计';
