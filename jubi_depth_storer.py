@@ -11,6 +11,7 @@ from jubi_common import logger
 # redis中收集深度的队列的key
 depth_coll_queue = 'depth_coll_queue'
 
+
 def work():
     while True:
         try:
@@ -29,7 +30,8 @@ def work():
             # mysql异常，将key和值从新放入redis
             exstr = traceback.format_exc()
             logger.error(exstr)
-            RedisPool.conn.lpush(key, val)
+            RedisPool.conn.lpush(depth_coll_queue, key)
+            # 数据库异常，特指连接断开，休眠1分钟，等待恢复
             time.sleep(60)
         except:
             exstr = traceback.format_exc()
