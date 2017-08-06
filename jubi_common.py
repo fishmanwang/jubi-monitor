@@ -10,6 +10,7 @@ from logging.handlers import RotatingFileHandler
 
 import mysql_config as config
 
+# redis中搜集tickers的队列名
 tickers_key = "tickers"
 
 # 操作information_schema连接

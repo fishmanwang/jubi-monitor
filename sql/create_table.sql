@@ -23,3 +23,13 @@ CREATE TABLE `jb_coin_rate` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `pk` (`pk`,`coin`)
 ) ENGINE=INNODB AUTO_INCREMENT=415395 DEFAULT CHARSET=utf8 COMMENT='币值涨幅';
+
+DROP TABLE IF EXISTS jb_coin_depth;
+CREATE TABLE jb_coin_depth(
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  pk INT NOT NULL,
+  coin VARCHAR(16) NOT NULL,
+  asks TEXT NOT NULL DEFAULT '' COMMENT '卖',
+  bids TEXT NOT NULL DEFAULT '' COMMENT '买',
+  UNIQUE(pk, coin)
+) COMMENT '深度表';

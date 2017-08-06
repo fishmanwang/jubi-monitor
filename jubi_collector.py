@@ -53,7 +53,7 @@ class TickerCollector:
                 logger.debug('value exists with key : %s' % timekey)
         except Exception as e:
             RedisPool.conn.delete(timekey)
-            exstr = traceback.format_exc(e)
+            exstr = traceback.format_exc()
             logger.error(exstr)
 
     @cm_monitor("TickerCollector.__get_ticker")
