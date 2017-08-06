@@ -58,22 +58,22 @@ def __store(pk, coin, asks, bids):
         return
 
     price = float(cursor.fetchone()[0])
-    ps = __infer_plus(price, asks)
-    ms = __infer_minus(price, bids)
+    # ps = __infer_plus(price, asks)
+    # ms = __infer_minus(price, bids)
+    #
+    # rate = 0
+    # pt = ps[len(ps)-1]
+    # mt = ms[len(ms)-1]
+    # if pt != 0 and mt != 0:
+    #     rate = round(mt / pt, 2)
+    #
+    # val = (pk, coin, price) + ps + ms + (rate,)
 
-    rate = 0
-    pt = ps[len(ps)-1]
-    mt = ms[len(ms)-1]
-    if pt != 0 and mt != 0:
-        rate = round(mt / pt, 2)
-
-    val = (pk, coin, price) + ps + ms + (rate,)
-
-    cursor.execute("insert into jb_coin_depth(pk, coin, asks, bids) VALUES (%s, %s, %s, %s)",
-                   (pk, coin, str(asks), str(bids)))
-    cursor.execute("insert into jb_coin_depth_rate(pk, coin, price, three_p, five_p, eight_p,\
-                    ten_p, twenty_p, total_p, three_m, five_m, eight_m, ten_m, twenty_m, total_m, rate) values \
-                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", val)
+    cursor.execute("insert into jb_coin_depth(pk, coin, price, asks, bids) VALUES (%s, %s, %s, %s, %s)",
+                   (pk, coin, price, str(asks), str(bids)))
+    # cursor.execute("insert into jb_coin_depth_rate(pk, coin, price, three_p, five_p, eight_p,\
+    #                 ten_p, twenty_p, total_p, three_m, five_m, eight_m, ten_m, twenty_m, total_m, rate) values \
+    #                 (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", val)
 
     conn.commit()
     cursor.close()
