@@ -3,7 +3,7 @@ CREATE TABLE jb_coin(
   id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `code` VARCHAR(16) NOT NULL,
   `name` VARCHAR(32) NOT NULL
-) COMMENT='币信息表';
+) COMMENT='虚拟币信息表';
 
 DROP TABLE IF EXISTS jb_coin_ticker;
 CREATE TABLE `jb_coin_ticker` (
@@ -12,7 +12,7 @@ CREATE TABLE `jb_coin_ticker` (
   `coin` VARCHAR(16) NOT NULL,
   `price` DECIMAL(18,6) NOT NULL DEFAULT 0,
   UNIQUE(`pk`, `coin`)
-) COMMENT='行情表';
+) COMMENT='虚拟币行情表';
 
 DROP TABLE IF EXISTS jb_coin_rate;
 CREATE TABLE `jb_coin_rate` (
@@ -22,7 +22,7 @@ CREATE TABLE `jb_coin_rate` (
   `rate` DECIMAL(18,6) NOT NULL DEFAULT '0.000000' COMMENT '涨幅',
   PRIMARY KEY (`id`),
   UNIQUE KEY `pk` (`pk`,`coin`)
-) ENGINE=INNODB AUTO_INCREMENT=415395 DEFAULT CHARSET=utf8 COMMENT='币值涨幅';
+) ENGINE=INNODB AUTO_INCREMENT=415395 DEFAULT CHARSET=utf8 COMMENT='虚拟币涨幅';
 
 DROP TABLE IF EXISTS jb_coin_depth;
 CREATE TABLE jb_coin_depth(
@@ -33,4 +33,18 @@ CREATE TABLE jb_coin_depth(
   asks TEXT NOT NULL DEFAULT '' COMMENT '卖',
   bids TEXT NOT NULL DEFAULT '' COMMENT '买',
   UNIQUE(pk, coin)
-) COMMENT '深度表';
+) COMMENT '虚拟币深度表';
+
+
+DROP TABLE IF EXISTS jb_coin_order;
+CREATE TABLE jb_coin_order(
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  pk INT NOT NULL,
+  tid INT NOT NULL COMMENT '交易号',
+  coin VARCHAR(16) NOT NULL,
+  price DECIMAL(18,6) NOT NULL COMMENT '价格： +为买，-为卖',
+  amount DECIMAL(18,6) NOT NULL COMMENT '数量',
+  trade_time INT NOT NULL COMMENT '交易时间',
+  UNIQUE(pk, coin),
+  UNIQUE(coin, tid)
+) COMMENT = '虚拟币交易表';

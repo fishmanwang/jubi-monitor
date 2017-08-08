@@ -1,5 +1,4 @@
 import time
-import decimal
 import pymysql
 import traceback
 from jubi_common import conn
@@ -28,7 +27,7 @@ def work():
                 continue
             __process_data(pk, coin, val)
             RedisPool.conn.expire(key, 60)
-        except pymysql.err.DatabaseError:
+        except pymysql.err.OperationalError:
             # mysql异常，将key和值从新放入redis
             exstr = traceback.format_exc()
             logger.error(exstr)
@@ -58,22 +57,8 @@ def __store(pk, coin, asks, bids):
         return
 
     price = float(cursor.fetchone()[0])
-    # ps = __infer_plus(price, asks)
-    # ms = __infer_minus(price, bids)
-    #
-    # rate = 0
-    # pt = ps[len(ps)-1]
-    # mt = ms[len(ms)-1]
-    # if pt != 0 and mt != 0:
-    #     rate = round(mt / pt, 2)
-    #
-    # val = (pk, coin, price) + ps + ms + (rate,)
-
     cursor.execute("insert into jb_coin_depth(pk, coin, price, asks, bids) VALUES (%s, %s, %s, %s, %s)",
                    (pk, coin, price, str(asks), str(bids)))
-    # cursor.execute("insert into jb_coin_depth_rate(pk, coin, price, three_p, five_p, eight_p,\
-    #                 ten_p, twenty_p, total_p, three_m, five_m, eight_m, ten_m, twenty_m, total_m, rate) values \
-    #                 (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", val)
 
     conn.commit()
     cursor.close()
