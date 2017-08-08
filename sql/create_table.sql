@@ -39,12 +39,10 @@ CREATE TABLE jb_coin_depth(
 DROP TABLE IF EXISTS jb_coin_order;
 CREATE TABLE jb_coin_order(
   id INT PRIMARY KEY AUTO_INCREMENT,
-  pk INT NOT NULL,
   tid INT NOT NULL COMMENT '交易号',
   coin VARCHAR(16) NOT NULL,
   price DECIMAL(18,6) NOT NULL COMMENT '价格： +为买，-为卖',
   amount DECIMAL(18,6) NOT NULL COMMENT '数量',
   trade_time INT NOT NULL COMMENT '交易时间',
-  UNIQUE(pk, coin),
   UNIQUE(coin, tid)
 ) COMMENT = '虚拟币交易表';

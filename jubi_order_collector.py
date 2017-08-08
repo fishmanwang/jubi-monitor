@@ -1,6 +1,5 @@
 #coding=utf-8
 import ssl
-import json
 import time
 import random
 import traceback
@@ -23,6 +22,7 @@ headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit
 context = ssl._create_unverified_context()
 depth_url = r"https://www.jubi.com/api/v1/orders/?coin={}&t={}"
 
+execute_span = 40
 
 def __do_collect(coin, pk):
     """
@@ -38,6 +38,8 @@ def __do_collect(coin, pk):
         if RedisPool.conn.exists(key) == 1:
             print("exists : " + key)
             return
+
+        time.sleep(0.2)
         with request.urlopen(req, timeout=3, context=context) as resp:
             d = resp.read().decode()
             if RedisPool.conn.set(key, d, ex=3600, nx=True) == 1:
@@ -46,6 +48,7 @@ def __do_collect(coin, pk):
         exstr = traceback.format_exc()
         logger.warn(exstr)
         logger.warn("collect {} error".format(key))
+        time.sleep(2)  # 被服务器拒绝之后，休眠2s
 
 
 @monitor("collect")
@@ -56,7 +59,7 @@ def collect():
         coins.append(c[0])
 
     tn = int(time.time())
-    pk = tn - tn % 60
+    pk = tn - tn % execute_span
     for coin in coins:
         __do_collect(coin, pk)
 
@@ -78,7 +81,7 @@ if __name__ == '__main__':
         'apscheduler.job_defaults.max_instances': '1'
     }
     sched = BlockingScheduler(conf)
-    sched.add_job(collect, 'cron', second='0')
+    sched.add_job(collect, 'cron', second='0/{}'.format(execute_span))
     sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
     sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 

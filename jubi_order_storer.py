@@ -44,14 +44,21 @@ def work():
 def __process_data(pk, coin, val):
     trds = eval(val)
     last_tid = get_last_tid(coin)
+    ds = []
     for trd in trds:
         tid = int(trd['tid'])
         price = trd['price']
         amount = trd['amount']
         trade_time = trd['date']
-        if tid > last_tid:
-            __store(tid, coin, price, amount, trade_time)
 
+        type = trd['type']
+        if type == 'sell':
+            price = 0 - price
+
+        if tid > last_tid:
+            d = (tid, coin, price, amount, trade_time)
+            ds.append(d)
+    __store(ds)
 
 def get_last_tid(coin):
     conn.connect()
@@ -67,12 +74,12 @@ def get_last_tid(coin):
     return r
 
 
-def __store(tid, coin, price, amount, trade_time):
+def __store(ds):
     conn.connect()
     cursor = conn.cursor()
 
-    cursor.execute("insert into jb_coin_order(tid, coin, price, amount, trade_time) VALUES (%s, %s, %s, %s, %s)",
-                   (tid, coin, price, amount, trade_time))
+    cursor.executemany("insert into jb_coin_order(tid, coin, price, amount, trade_time) VALUES (%s, %s, %s, %s, %s)",
+                       ds)
 
     conn.commit()
     cursor.close()
