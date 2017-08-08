@@ -24,6 +24,7 @@ depth_url = r"https://www.jubi.com/api/v1/orders/?coin={}&t={}"
 
 execute_span = 40
 
+
 def __do_collect(coin, pk):
     """
     收集数据

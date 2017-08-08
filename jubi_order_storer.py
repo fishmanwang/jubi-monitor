@@ -7,8 +7,6 @@ from jubi_common import RedisPool
 from jubi_common import monitor
 from jubi_common import logger
 
-
-
 # redis中收集深度的队列的key
 order_coll_queue = 'order_coll_queue'
 conn.autocommit(False)
@@ -51,14 +49,15 @@ def __process_data(pk, coin, val):
         amount = trd['amount']
         trade_time = trd['date']
 
-        type = trd['type']
-        if type == 'sell':
-            price = 0 - price
+        tp = trd['type']
+        if tp == 'sell':
+            amount = 0 - amount
 
         if tid > last_tid:
             d = (tid, coin, price, amount, trade_time)
             ds.append(d)
     __store(ds)
+
 
 def get_last_tid(coin):
     conn.connect()
