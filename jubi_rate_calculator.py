@@ -27,7 +27,7 @@ def get_next_time(time):
     """
     if time == 0:
         return 0
-    return trim_to_minute(time) + 60
+    return trim_to_minute(time) + 600
 
 
 class TickerRepository(object):
@@ -51,7 +51,7 @@ class TickerRepository(object):
 
         next_time = get_next_time(time)
         logger.debug("coin : {}, next_time : {}".format(coin, next_time))
-        cursor.execute('select pk, price from jb_coin_ticker where coin=%s and pk >= %s limit 1', (coin, next_time))
+        cursor.execute('select pk, price from jb_coin_ticker where coin=%s and pk >= %s order by pk asc limit 1', (coin, next_time))
         logger.debug("rowcount : " + str(cursor.rowcount))
         if cursor.rowcount == 0:
             return ret
@@ -72,7 +72,7 @@ class TickerRepository(object):
         :return: 
         """
         cursor = conn.cursor()
-        cursor.execute("select price from jb_coin_ticker where coin=%s and pk>= %s limit 1", (coin, time))
+        cursor.execute("select price from jb_coin_ticker where coin=%s and pk>= %s order by pk asc limit 1", (coin, time))
         if cursor.rowcount == 0:
             return 0
         raw = cursor.fetchone()
