@@ -9,7 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 __pool = ConnectionPool()
 
-rate_time_span = 600 # 时间间隔
+rate_time_span = 60 # 时间间隔
 
 
 def trim_to_minute(time):
@@ -197,18 +197,17 @@ def mis_listener(event):
 
 
 if __name__ == '__main__':
-    work()
-    # conf = {
-    #     'apscheduler.job_defaults.coalesce': 'false',
-    #     'apscheduler.job_defaults.max_instances': '1'
-    # }
-    # sched = BlockingScheduler(conf)
-    # sched.add_job(work, 'cron', second='5')
-    # sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
-    # sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
-    #
-    # try:
-    #     sched.start()
-    # except (KeyboardInterrupt, SystemExit):
-    #     exstr = traceback.format_exc()
-    #     logger.error(exstr)
+    conf = {
+        'apscheduler.job_defaults.coalesce': 'false',
+        'apscheduler.job_defaults.max_instances': '1'
+    }
+    sched = BlockingScheduler(conf)
+    sched.add_job(work, 'cron', second='5')
+    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
+
+    try:
+        sched.start()
+    except (KeyboardInterrupt, SystemExit):
+        exstr = traceback.format_exc()
+        logger.error(exstr)
