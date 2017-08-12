@@ -68,13 +68,13 @@ class TickerRepository(object):
     @staticmethod
     def get_price(coin, time):
         """
-        获取指定时间的价格。如果不存在，则向后获取
+        获取指定时间的价格。如果不存在，则向前（必须）获取
         :param coin: 币种
         :param time: 时间
         :return: 
         """
         cursor = conn.cursor()
-        cursor.execute("select price from jb_coin_ticker where coin=%s and pk>= %s order by pk asc limit 1", (coin, time))
+        cursor.execute("select price from jb_coin_ticker where coin=%s and pk<= %s order by pk desc limit 1", (coin, time))
         if cursor.rowcount == 0:
             return 0
         raw = cursor.fetchone()
@@ -137,9 +137,10 @@ def get_and_set_origin_price(m, coin, time):
     :return: 
     """
     t = get_origin_time(time)
+    ts = get_day_time(time)
     d = m.get(coin)
-    if d is None or d[0] != t:
-        d = (t, TickerRepository.get_price(coin, t))
+    if d is None or d[0] != ts:
+        d = (ts, TickerRepository.get_price(coin, t))
         m[coin] = d
     return d[1]
 
@@ -155,7 +156,7 @@ def get_calculated_item(m, dt):
     pk_time = dt[1]
     price = dt[2]
     origin_price = get_and_set_origin_price(m, coin, pk_time)
-    if origin_price == 0:
+    if origin_price == 0 or pk_time == get_origin_time(pk_time):
         r = (coin, pk_time, 0)
         return r
     rate = round((price - origin_price) / origin_price, 4) * 100

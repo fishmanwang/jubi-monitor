@@ -94,6 +94,15 @@ class RedisPool:
     conn = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, max_connections=10)
 
 
+def get_day_time(t):
+    """
+    将数字转化为 年-月-日
+    :param t: 
+    :return: 
+    """
+    ta = time.localtime(t)
+    return time.strftime('%Y-%m-%d', ta)
+
 logpath = sys.argv[1]
 
 __formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
