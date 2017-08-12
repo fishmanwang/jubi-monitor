@@ -9,7 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 __pool = ConnectionPool()
 
-rate_time_span = 60 # 时间间隔
+rate_time_span = 600 # 时间间隔
 
 
 def trim_to_minute(time):
