@@ -203,7 +203,7 @@ if __name__ == '__main__':
         'apscheduler.job_defaults.max_instances': '1'
     }
     sched = BlockingScheduler(conf)
-    sched.add_job(work, 'cron', second='5')
+    sched.add_job(work, 'cron', second='30')
     sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
     sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 
