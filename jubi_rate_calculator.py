@@ -9,6 +9,8 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 __pool = ConnectionPool()
 
+rate_time_span = 600 # 时间间隔
+
 
 def trim_to_minute(time):
     """
@@ -16,7 +18,7 @@ def trim_to_minute(time):
     :param time: 
     :return: 
     """
-    return time - (time % 60)
+    return time - (time % rate_time_span)
 
 
 def get_next_time(time):
@@ -27,7 +29,7 @@ def get_next_time(time):
     """
     if time == 0:
         return 0
-    return trim_to_minute(time) + 600
+    return trim_to_minute(time) + rate_time_span
 
 
 class TickerRepository(object):
@@ -195,17 +197,18 @@ def mis_listener(event):
 
 
 if __name__ == '__main__':
-    conf = {
-        'apscheduler.job_defaults.coalesce': 'false',
-        'apscheduler.job_defaults.max_instances': '1'
-    }
-    sched = BlockingScheduler(conf)
-    sched.add_job(work, 'cron', second='5')
-    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
-    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
-
-    try:
-        sched.start()
-    except (KeyboardInterrupt, SystemExit):
-        exstr = traceback.format_exc()
-        logger.error(exstr)
+    work()
+    # conf = {
+    #     'apscheduler.job_defaults.coalesce': 'false',
+    #     'apscheduler.job_defaults.max_instances': '1'
+    # }
+    # sched = BlockingScheduler(conf)
+    # sched.add_job(work, 'cron', second='5')
+    # sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    # sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
+    #
+    # try:
+    #     sched.start()
+    # except (KeyboardInterrupt, SystemExit):
+    #     exstr = traceback.format_exc()
+    #     logger.error(exstr)
