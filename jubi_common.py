@@ -93,6 +93,7 @@ class ConnectionPool:
 class RedisPool:
     conn = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, max_connections=10)
 
+day_format = '%Y-%m-%d'
 
 def get_day_time(t):
     """
@@ -101,7 +102,17 @@ def get_day_time(t):
     :return: 
     """
     ta = time.localtime(t)
-    return time.strftime('%Y-%m-%d', ta)
+    return time.strftime(day_format, ta)
+
+def get_day_begin_time_int():
+    """
+    获取当天开始时间的int值
+    :return: 
+    """
+    s = time.strftime(day_format)
+    p = time.strptime(s, day_format)
+    return int(time.mktime(p))
+
 
 logpath = sys.argv[1]
 
