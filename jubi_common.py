@@ -1,6 +1,7 @@
 #coding=utf-8
 import sys
 import time
+import datetime
 import pymysql
 import redis
 import logging
@@ -104,12 +105,13 @@ def get_day_time(t):
     ta = time.localtime(t)
     return time.strftime(day_format, ta)
 
-def get_day_begin_time_int():
+def get_day_begin_time_int(t):
     """
-    获取当天开始时间的int值
+    获取当天开始时间( 00:00:00 )的int值
     :return: 
     """
-    s = time.strftime(day_format)
+    lt = time.localtime(t)
+    s = time.strftime(day_format, lt)
     p = time.strptime(s, day_format)
     return int(time.mktime(p))
 

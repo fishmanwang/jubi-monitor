@@ -9,7 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 __pool = ConnectionPool()
 
-rate_time_span = 600  # 时间间隔
+rate_time_span = 60  # 时间间隔
 
 
 def trim_to_minute(time):
@@ -47,7 +47,6 @@ class TickerRepository(object):
         :param time: 
         :return: 
         """
-
         ret = ()
         cursor = conn.cursor()
 
@@ -55,10 +54,8 @@ class TickerRepository(object):
         cursor.execute('select pk, price from jb_coin_ticker where coin=%s and pk >= %s order by pk asc limit 1', (coin, next_time))
         if cursor.rowcount == 0:
             return ret
-
         d = cursor.fetchone()
         ret = (coin, trim_to_minute(d[0]), d[1])
-
         cursor.close()
 
         return ret
@@ -116,19 +113,6 @@ class TickerIncRepository(object):
         conn.commit()
         cursor.close()
 
-def get_origin_time(t):
-    """
-    获取每日初始时间 00:00:00    
-    :param t: 
-    :return: 
-    """
-    #return t - (t % 86400) + time.timezone
-    lt = time.localtime(t)
-    s = time.strftime(day_format, lt)
-    p = time.strptime(s, day_format)
-    return int(time.mktime(p))
-
-
 def get_and_set_origin_price(m, coin, pk_time):
     """
     获取和设置日开盘价
@@ -137,7 +121,7 @@ def get_and_set_origin_price(m, coin, pk_time):
     :param pk_time: 任意时间
     :return: 
     """
-    t = get_origin_time(pk_time)
+    t = get_day_begin_time_int(pk_time)
     d = m.get(coin)
     if d is None or d[0] != t:
         p = TickerRepository.get_price(coin, t)
@@ -157,7 +141,7 @@ def get_calculated_item(m, dt):
     pk_time = dt[1]
     price = dt[2]
     origin_price = get_and_set_origin_price(m, coin, pk_time)
-    if origin_price == 0 or pk_time == get_origin_time(pk_time):
+    if origin_price == 0 or pk_time == get_day_begin_time_int(pk_time):
         r = (coin, pk_time, 0)
         return r
     rate = round((price - origin_price) / origin_price, 4) * 100
