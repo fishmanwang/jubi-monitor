@@ -88,12 +88,12 @@ def do_clean():
 def err_listener(event):
     if event.exception:
         exstr = traceback.format_exc()
-        logger.error('The increase calculate job crashed with exception : {0}'.format(event.exception))
+        logger.error('The cleaner job crashed with exception : {0}'.format(event.exception))
         logger.error(exstr)
 
 
 def mis_listener(event):
-    logger.warning("The increase calculate job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
+    logger.warning("The cleaner job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
 
 
 if __name__ == '__main__':
