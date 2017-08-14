@@ -16,7 +16,7 @@ headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit
                     (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36''',
            "connection": "keep-alive"}
 
-time_span = 5
+time_span = 10
 
 class TickerCollector:
     """
