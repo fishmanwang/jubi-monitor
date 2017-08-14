@@ -9,7 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 __pool = ConnectionPool()
 
-rate_time_span = 60 # 时间间隔
+rate_time_span = 600  # 时间间隔
 
 
 def trim_to_minute(time):
@@ -21,15 +21,15 @@ def trim_to_minute(time):
     return time - (time % rate_time_span)
 
 
-def get_next_time(time):
+def get_next_time(t):
     """
     获取指定时间之后的整点一分钟
-    :param time: 
+    :param t: 
     :return: 
     """
-    if time == 0:
+    if t == 0:
         return 0
-    return trim_to_minute(time) + rate_time_span
+    return trim_to_minute(t) + rate_time_span
 
 
 class TickerRepository(object):
@@ -52,9 +52,7 @@ class TickerRepository(object):
         cursor = conn.cursor()
 
         next_time = get_next_time(time)
-        logger.debug("coin : {}, next_time : {}".format(coin, next_time))
         cursor.execute('select pk, price from jb_coin_ticker where coin=%s and pk >= %s order by pk asc limit 1', (coin, next_time))
-        logger.debug("rowcount : " + str(cursor.rowcount))
         if cursor.rowcount == 0:
             return ret
 
@@ -66,15 +64,15 @@ class TickerRepository(object):
         return ret
 
     @staticmethod
-    def get_price(coin, time):
+    def get_price(coin, t):
         """
         获取指定时间的价格。如果不存在，则向前（必须）获取
         :param coin: 币种
-        :param time: 时间
+        :param t: 时间
         :return: 
         """
         cursor = conn.cursor()
-        cursor.execute("select price from jb_coin_ticker where coin=%s and pk<= %s order by pk desc limit 1", (coin, time))
+        cursor.execute("select price from jb_coin_ticker where coin=%s and pk<= %s order by pk desc limit 1", (coin, t))
         if cursor.rowcount == 0:
             return 0
         raw = cursor.fetchone()
@@ -114,33 +112,38 @@ class TickerIncRepository(object):
         if item is None or len(item) == 0:
             return
         cursor = conn.cursor()
-        cursor.execute("insert into jb_coin_rate(coin, pk, rate) values(%s, %s, %s) ", item)
+        cursor.execute("insert into jb_coin_rate(coin, pk, rate,price, origin) values(%s, %s, %s, %s, %s) ", item)
         conn.commit()
         cursor.close()
 
+day_format = '%Y-%m-%d'
 
-def get_origin_time(time):
+def get_origin_time(t):
     """
-    获取每日初始时间，东八区减8小时    
-    :param time: 
+    获取每日初始时间 00:00:00    
+    :param t: 
     :return: 
     """
-    return time - (time % 86400) - 28800
+    #return t - (t % 86400) + time.timezone
+    lt = time.localtime(t)
+    s = time.strftime(day_format, lt)
+    p = time.strptime(s, day_format)
+    return int(time.mktime(p))
 
 
-def get_and_set_origin_price(m, coin, time):
+def get_and_set_origin_price(m, coin, pk_time):
     """
     获取和设置日开盘价
     :param m: map
     :param coin: 
-    :param time: 任意时间
+    :param pk_time: 任意时间
     :return: 
     """
-    t = get_origin_time(time)
-    ts = get_day_time(time)
+    t = get_origin_time(pk_time)
     d = m.get(coin)
-    if d is None or d[0] != ts:
-        d = (ts, TickerRepository.get_price(coin, t))
+    if d is None or d[0] != t:
+        p = TickerRepository.get_price(coin, t)
+        d = (t, p)
         m[coin] = d
     return d[1]
 
@@ -174,13 +177,10 @@ def work():
         for c in cs:
             coin = c[0]
             last_pk = TickerIncRepository.get_last_item(coin)
-            logger.debug("last_pk : " + str(last_pk))
             dt = TickerRepository.get_next_minute_ticker(coin, last_pk)
-            logger.debug("dt : " + str(dt))
             if len(dt) == 0:
                 continue
             item = get_calculated_item(coin_origin_price_map, dt)
-            logger.debug("item : " + str(item))
             TickerIncRepository.add_item(item)
             has_item = True
         if not has_item:
