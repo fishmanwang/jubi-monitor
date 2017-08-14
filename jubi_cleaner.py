@@ -81,9 +81,11 @@ def do_clean():
     清理数据
     :return: 
     """
+    logger.info("clean job started")
     clean_coin_ticker()
     clean_coin_rate()
     clean_coin_depth()
+    logger.info("clean job finished")
 
 def err_listener(event):
     if event.exception:
@@ -97,21 +99,17 @@ def mis_listener(event):
 
 
 if __name__ == '__main__':
-    do_clean()
+    conf = {
+        'apscheduler.job_defaults.coalesce': 'false',
+        'apscheduler.job_defaults.max_instances': '1'
+    }
+    sched = BlockingScheduler(conf)
+    sched.add_job(do_clean, 'cron', hour='1')
+    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 
-    while True:
-        time.sleep(10)
-    # conf = {
-    #     'apscheduler.job_defaults.coalesce': 'false',
-    #     'apscheduler.job_defaults.max_instances': '1'
-    # }
-    # sched = BlockingScheduler(conf)
-    # sched.add_job(do_clean, 'cron', hour='1')
-    # sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
-    # sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
-    #
-    # try:
-    #     sched.start()
-    # except (KeyboardInterrupt, SystemExit):
-    #     exstr = traceback.format_exc()
-    #     logger.error(exstr)
+    try:
+        sched.start()
+    except (KeyboardInterrupt, SystemExit):
+        exstr = traceback.format_exc()
+        logger.error(exstr)

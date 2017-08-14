@@ -82,6 +82,7 @@ class TickerCollector:
         except Exception as e:
             exstr = traceback.format_exc()
             logger.error(exstr)
+            time.sleep(10)
 
         return tickers
 
