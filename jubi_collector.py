@@ -13,7 +13,10 @@ from jubi_common import tickers_key
 from jubi_common import logger
 
 headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 
-                    (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'''}
+                    (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36''',
+           "connection": "keep-alive"}
+
+time_span = 5
 
 class TickerCollector:
     """
@@ -28,7 +31,7 @@ class TickerCollector:
     @cm_monitor("TickerCollector.collect")
     def collect(self):
         t = int(time.time())
-        t = t - t % 5
+        t = t - t % time_span
         self.__do_collect(t)
         pass
 
@@ -41,7 +44,7 @@ class TickerCollector:
             data = ticker[1]
             ps.append([coin, data])
         tn = int(time.time())
-        keynum = tn - tn % 5
+        keynum = tn - tn % time_span
         logger.debug(keynum)
         try:
             timekey = TickerCollector.ts_prefix + str(keynum)
@@ -106,7 +109,7 @@ if __name__ == '__main__':
         'apscheduler.job_defaults.max_instances': '1'
     }
     sched = BlockingScheduler(conf)
-    sched.add_job(tc.collect, 'cron', second='0/10')
+    sched.add_job(tc.collect, 'cron', second='0/{}'.format(time_span))
     sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
     sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 
