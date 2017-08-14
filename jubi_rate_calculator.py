@@ -174,10 +174,6 @@ def work():
         has_item = False  # 判断是否还有需要加入的项
         for c in cs:
             coin = c[0]
-
-            if coin != 'xas':
-                continue
-
             last_pk = TickerIncRepository.get_last_item(coin)
             dt = TickerRepository.get_next_minute_ticker(coin, last_pk)
             if len(dt) == 0:

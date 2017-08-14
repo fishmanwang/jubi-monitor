@@ -10,8 +10,11 @@ def clean_coin_ticker():
     清理行情表，保留一天完整数据，其他的以一分钟为单位
     :return: 
     """
-    pass
-
+    t = get_day_begin_time_int()
+    cursor = conn.cursor()
+    cursor.execute("delete from jb_coin_ticker where (pk mod 60) != 0 and pk < %s", (t,))
+    conn.commit()
+    cursor.close()
 
 def do_clean():
     """
