@@ -44,12 +44,34 @@ class TickerCollector:
         logger.debug(t)
         if len(ps) == 0:
             return
-        RedisPool.conn.set(current_tickers_key, ps, ex=3600)
+        # RedisPool.conn.set(current_tickers_key, ps, ex=3600)
+        self.cache_current_tickers(tickers)
         ex = RedisPool.conn.hexists(tickers_map_key, t)
         logger.debug(ex)
         if not ex:
             logger.debug("do add")
             RedisPool.conn.hsetnx(tickers_map_key, t, ps)
+
+    def cache_current_tickers(self, tickers):
+        """
+        将当当前行情缓存，供web端使用
+        :param tickers: 
+        :return: 
+        """
+        for ticker in tickers:
+            coin = ticker[0]
+            data = ticker[1]
+            d = {}
+            d["coin"] = coin
+            d['pk'] = data[0]
+            d['high'] = data[1]
+            d['low'] = data[2]
+            d['buy'] = data[3]
+            d['sell'] = data[4]
+            d['last'] = data[5]
+            d['vol'] = data[6]
+            d['volume'] = data[7]
+            RedisPool.conn.set("cache_ticker_{}".format(coin), str(d).replace('\'', '\"'))
 
     @cm_monitor("TickerCollector.__get_ticker")
     def __get_tickers(self, pk):
@@ -69,8 +91,8 @@ class TickerCollector:
             for item in d.items():
                 coin = item[0]
                 d = item[1]
-                data = (pk, round(d['high'], 6), round(d['low'], 6), round(d['buy'], 6), round(d['sell'], 6),
-                        round(d['last'], 6), round(d['vol'], 6), round(d['volume'], 6))
+                data = [pk, round(d['high'], 6), round(d['low'], 6), round(d['buy'], 6), round(d['sell'], 6),
+                        round(d['last'], 6), round(d['vol'], 6), round(d['volume'], 6)]
                 tickers.append((coin, data))
 
         return tickers
