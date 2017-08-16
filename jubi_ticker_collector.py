@@ -45,7 +45,10 @@ class TickerCollector:
         if len(ps) == 0:
             return
         RedisPool.conn.set(current_tickers_key, ps, ex=3600)
-        if not RedisPool.conn.hexists(tickers_map_key, t):
+        ex = RedisPool.conn.hexists(tickers_map_key, t)
+        logger.debug(ex)
+        if not ex:
+            logger.debug("do add")
             RedisPool.conn.hsetnx(tickers_map_key, t, ps)
 
     @cm_monitor("TickerCollector.__get_ticker")
