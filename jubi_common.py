@@ -108,7 +108,7 @@ __sh.setLevel(logging.DEBUG)
 __sh.setFormatter(__formatter)
 
 logger = logging.getLogger("jubi")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(__fh)
 logger.addHandler(__sh)
 logger.propagate = True
