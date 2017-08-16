@@ -27,7 +27,7 @@ def clean_coin_ticker():
         seven_t = get_days_ago_begin_time(now, 7)
 
         cursor = conn.cursor()
-        cursor.execute("delete from jb_coin_ticker where (pk mod 60) != 0 and pk < %s", (t,))
+        #cursor.execute("delete from jb_coin_ticker where (pk mod 60) != 0 and pk < %s", (t,))
         cursor.execute("delete from jb_coin_ticker where (pk mod 600) != 0 and pk < %s", (seven_t,))
     except Exception:
         exstr = traceback.format_exc()

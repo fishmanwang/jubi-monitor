@@ -1,1 +1,1 @@
-nohup python ../jubi_cleaner.py /var/projects/jubi-monitor/logs/cleaner >/dev/null 2>&1 &
+nohup python ../jubi_cleaner.py >/dev/null 2>&1 &

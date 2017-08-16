@@ -1,12 +1,11 @@
 #coding=utf-8
+import os
 import sys
 import time
-import datetime
 import pymysql
 import redis
 import logging
 from functools import wraps
-from DBUtils.PooledDB import PooledDB
 from logging.handlers import RotatingFileHandler
 
 import mysql_config as config
@@ -14,9 +13,6 @@ import mysql_config as config
 # redis中搜集tickers的队列名
 tickers_key = "tickers"
 
-# 操作information_schema连接
-op_conn = pymysql.connect(host=config.DB_HOST, port=config.DB_PORT, user=config.DB_USER, passwd=config.DB_PASSWORD,
-                          db="information_schema", charset="utf8")
 # 普通连接
 conn = pymysql.connect(host=config.DB_HOST, port=config.DB_PORT, user=config.DB_USER, passwd=config.DB_PASSWORD,
                        db=config.DB_DBNAME, charset="utf8")
@@ -67,30 +63,6 @@ def cm_monitor(text):
     return decorate
 
 
-class ConnectionPool:
-    __pool = None
-
-    def __enter__(self):
-        self.conn = self.__get_conn()
-        self.cursor = self.conn.cursor()
-        return self
-
-    def __get_conn(self):
-        if self.__pool is None:
-            self.__pool = PooledDB(creator=pymysql, mincached=config.DB_MIN_CACHED, maxcached=config.DB_MAX_CACHED,
-                                   maxshared=config.DB_MAX_SHARED, maxconnections=config.DB_MAX_CONNECYIONS,
-                                   blocking=config.DB_BLOCKING, maxusage=config.DB_MAX_USAGE,
-                                   setsession=config.DB_SET_SESSION,
-                                   host=config.DB_HOST, port=config.DB_PORT,
-                                   user=config.DB_USER, passwd=config.DB_PASSWORD,
-                                   db=config.DB_DBNAME, use_unicode=False, charset=config.DB_CHARSET)
-        return self.__pool.connection()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.cursor.close()
-        self.conn.close()
-
-
 class RedisPool:
     conn = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, max_connections=10)
 
@@ -115,12 +87,19 @@ def get_day_begin_time_int(t):
     p = time.strptime(s, day_format)
     return int(time.mktime(p))
 
+if len(sys.argv) > 1:
+    log_path = sys.argv[1]
+else:
+    fn = os.path.splitext(os.path.split(sys.argv[0])[1])[0]
+    path = '/var/projects/jubi-monitor/logs'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    log_path = path + '/{}.log'.format(fn)
 
-logpath = sys.argv[1]
 
 __formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-__fh = RotatingFileHandler(logpath + "/jubi.log", maxBytes=1024*1024*10, backupCount=3)
+__fh = RotatingFileHandler(log_path, maxBytes=1024*1024*10, backupCount=3)
 __fh.setLevel(logging.DEBUG)
 __fh.setFormatter(__formatter)
 
@@ -129,7 +108,7 @@ __sh.setLevel(logging.DEBUG)
 __sh.setFormatter(__formatter)
 
 logger = logging.getLogger("jubi")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(__fh)
 logger.addHandler(__sh)
 logger.propagate = True
