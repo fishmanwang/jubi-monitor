@@ -35,9 +35,6 @@ def store():
             keys = RedisPool.conn.hkeys(tickers_map_key)
             for key in keys:
                 ik = int(key)
-                logger.info(ik)
-                logger.info(last_pk)
-                logger.info(ik > last_pk)
                 if ik > last_pk:
                     data = RedisPool.conn.hget(tickers_map_key, key)
                     __do_store(data.decode())
