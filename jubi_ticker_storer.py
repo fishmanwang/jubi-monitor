@@ -1,5 +1,4 @@
 #coding=utf-8
-import pymysql
 import traceback
 
 from jubi_common import *

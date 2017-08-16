@@ -22,7 +22,6 @@ class TickerCollector:
     采集所有币种的行情
     """
     all_ticker_url = r"https://www.jubi.com/api/v1/allticker/?t={0}"
-    ts_prefix = 'ts_'
 
     def __init__(self):
         pass
