@@ -7,8 +7,6 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 #涨幅计算
 
-__pool = ConnectionPool()
-
 rate_time_span = 60  # 时间间隔
 
 
@@ -34,8 +32,8 @@ def get_next_time(t):
 
 class TickerRepository(object):
 
-    def __init__(self, pool):
-        self.pool = pool
+    def __init__(self):
+        pass
 
     @staticmethod
     @monitor("get_next_minute_ticker")
@@ -43,7 +41,6 @@ class TickerRepository(object):
         """
         获取指定时间行情
         :param coin: 币种
-        :param tb_name: 币行情表名
         :param time: 
         :return: 
         """
@@ -80,8 +77,8 @@ class TickerIncRepository(object):
     """
     行情涨幅
     """
-    def __init__(self, pool):
-        self.pool = pool
+    def __init__(self):
+        pass
 
     @staticmethod
     @monitor("get_last_item")
