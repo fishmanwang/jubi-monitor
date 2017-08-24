@@ -35,14 +35,14 @@ CREATE TABLE jb_coin_depth(
   UNIQUE(pk, coin)
 ) COMMENT '虚拟币深度表';
 
-
-DROP TABLE IF EXISTS jb_coin_order;
-CREATE TABLE jb_coin_order(
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  tid INT NOT NULL COMMENT '交易号',
-  coin VARCHAR(16) NOT NULL,
-  price DECIMAL(18,6) NOT NULL COMMENT '价格： +为买，-为卖',
-  amount DECIMAL(18,6) NOT NULL COMMENT '数量',
-  trade_time INT NOT NULL COMMENT '交易时间',
-  UNIQUE(coin, tid)
-) COMMENT = '虚拟币交易表';
+DROP TABLE IF EXISTS jb_price_notify;
+CREATE TABLE jb_price_notify(
+  id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL COMMENT '用户',
+  coin VARCHAR(16) NOT NULL COMMENT '币',
+  price DECIMAL(18,6) NOT NULL COMMENT '价格。正为涨；负为跌',
+  create_time DATETIME,
+  update_time DATETIME,
+  INDEX idx_user(user_id),
+  INDEX idx_coin(coin)
+) COMMENT = '价格提醒表';

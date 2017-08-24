@@ -90,7 +90,8 @@ def get_day_begin_time_int(t):
 if len(sys.argv) > 1:
     log_path = sys.argv[1]
 else:
-    fn = os.path.splitext(os.path.split(sys.argv[0])[1])[0]
+    fn = os.path.basename(sys.argv[0]).split('.')[0]
+
     path = '/var/projects/jubi-monitor/logs'
     if not os.path.exists(path):
         os.makedirs(path)
