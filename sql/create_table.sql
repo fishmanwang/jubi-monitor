@@ -44,5 +44,5 @@ CREATE TABLE jb_price_notify(
   create_time DATETIME,
   update_time DATETIME,
   INDEX idx_user(user_id),
-  INDEX idx_coin(coin)
+  INDEX idx_coin_price(coin, price)
 ) COMMENT = '价格提醒表';
