@@ -75,6 +75,10 @@ def get_candidate_price_notify_info(coin, price):
                    (coin, price, 0-price))
     if cursor.rowcount > 0:
         us = cursor.fetchall()
+
+    if coin == 'xas':
+        logger.info(str(us))
+
     conn.commit()
     cursor.close()
     return us
