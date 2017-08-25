@@ -39,6 +39,10 @@ def __do_send_email(targets):
 all_coin_key = 'py_all_coins'
 
 def __get_all_coins():
+    """
+    获取所有币信息
+    :return: 
+    """
     coins = RedisPool.conn.get(all_coin_key)
     if coins is None:
         cursor = conn.cursor()
@@ -76,6 +80,14 @@ def get_candidate_price_notify_info(coin, price):
     return us
 
 def __get_notify_info(user_id, coin, name, price):
+    """
+    获取通知内容
+    :param user_id: 用户ID
+    :param coin: xas
+    :param name: 阿希币
+    :param price: 价格
+    :return: 
+    """
     cursor = conn.cursor()
     cursor.execute('select nickname, email from zx_account where user_id=%s', user_id)
     if cursor.rowcount == 0:
@@ -90,8 +102,13 @@ def __get_notify_info(user_id, coin, name, price):
     r = (content, email)
     return r
 
-
 def coin_notify(coin, name):
+    """
+    指定币，发送通知
+    :param coin: xas 
+    :param name: 阿希币
+    :return: 
+    """
     ticker_str = RedisPool.conn.get("cache_ticker_" + coin)
     if ticker_str is None:
         return
@@ -108,9 +125,14 @@ def coin_notify(coin, name):
         __do_send_email(targets)
 
 def __delete_price_notify(*args):
-    id = args[0]
+    """
+    通知成功后，删除价格提醒设置
+    :param args: 
+    :return: 
+    """
+    pnid = args[0]
     cursor = conn.cursor()
-    cursor.execute('delete from jb_price_notify where id = %s', (id, ))
+    cursor.execute('delete from jb_price_notify where id = %s', (pnid, ))
     conn.commit()
     cursor.close()
 
