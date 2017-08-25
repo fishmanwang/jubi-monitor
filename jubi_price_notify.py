@@ -32,9 +32,9 @@ def __do_send_email(targets):
             msg['Subject'] = '聚币监控价格提醒'
             server.sendmail(sender, recvs, msg.as_string())
             target[2](target[3])
-    except smtplib.SMTPException as e:
+    except smtplib.SMTPException:
         exstr = traceback.format_exc()
-        logger.warn("Error: 发送邮件失败。原因：" + exstr)
+        logger.error("Error: 发送邮件失败。原因：" + exstr)
 
 all_coin_key = 'py_all_coins'
 
@@ -146,6 +146,7 @@ def notify():
     通知
     :return: 
     """
+    logger.info("execute price notify job")
     coins = __get_all_coins()
     if len(coins) == 0:
         return
@@ -160,7 +161,7 @@ def err_listener(event):
         logger.error(exstr)
 
 def mis_listener(event):
-    logger.warning("Collection job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
+    logger.warning("Price notify job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
 
 if __name__ == '__main__':
     conf = {
