@@ -16,12 +16,12 @@ def __do_send_email(targets):
         return
     
     mail_host = 'smtp.163.com'
+    mail_port = 465
     mail_user = 'tjwang516@163.com'
     mail_pass = 'Admin123'
     sender = 'tjwang516@163.com'
     try:
-        server = smtplib.SMTP()
-        server.connect(mail_host, 25)
+        server = smtplib.SMTP_SSL(mail_host, mail_port)
         server.login(mail_user, mail_pass)
         for target in targets:
             content = target[0]
