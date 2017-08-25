@@ -1,36 +1,39 @@
 import smtplib
 from email.mime.text import MIMEText
+import traceback
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from jubi_common import *
 
-def __do_send_email(content, recv):
+def __do_send_email(targets):
+    """
+    发送邮件给目标组
+    :param targets: [(content, recv), ...] 
+    :return: 
+    """
+    if targets is None or len(targets) == 0:
+        return
+    
     mail_host = 'smtp.163.com'
     mail_user = 'tjwang516@163.com'
     mail_pass = 'Admin123'
-
-    sender = r'tjwang516@163.com'
-    #recvs = ['379590010@qq.com']
-    recvs = [recv]
-
-    #msg = MIMEText(r'阿希币价格已达 7 元', _charset='utf-8')
-    msg = MIMEText(content, _charset='utf-8')
-    msg['From'] = r'聚币监控程序'
-    msg['To'] = ';'.join(recvs)
-    msg['Subject'] = r'价格提醒'
-
-    print(msg.as_string())
-
+    sender = 'tjwang516@163.com'
     try:
-        smtp_obj = smtplib.SMTP()
-        smtp_obj.connect(mail_host, 25)
-        smtp_obj.login(mail_user, mail_pass)
-        smtp_obj.sendmail(sender, recvs, msg.as_string())
-        print('邮件发送成功')
+        server = smtplib.SMTP()
+        server.connect(mail_host, 25)
+        server.login(mail_user, mail_pass)
+        for target in targets:
+            content = target[0]
+            recvs = [target[1]]
+            msg = MIMEText(content, _charset='utf-8')
+            msg['From'] = 'tjwang516@163.com'
+            msg['To'] = ';'.join(recvs)
+            msg['Subject'] = '聚币监控价格提醒'
+            server.sendmail(sender, recvs, msg.as_string())
     except smtplib.SMTPException as e:
-        print(e)
-        print("Error: 发送邮件失败")
+        exstr = traceback.format_exc()
+        logger.warn("Error: 发送邮件失败。原因：" + exstr)
 
 all_coin_key = 'py_all_coins'
 
@@ -52,33 +55,29 @@ def __get_all_coins():
         coins = eval(coins)
     return coins
 
-def get_candidate_price_notify(coin, price):
+def get_candidate_price_notify_user(coin, price):
     """
-    获取待提醒信息
+    获取待提醒用户
     :param coin: 币代码
     :param name: 币名
     :param price: 
     :return: 
     """
-    ups = []
-    downs = []
+    us = []
     cursor = conn.cursor()
-    cursor.execute("select user_id from jb_price_notify where coin=%s and price >=%s", (coin, price))
+    cursor.execute("select user_id from jb_price_notify \
+                    where coin=%s and ((price <=%s AND price > 0) OR (price <= %s AND price < 0))",
+                   (coin, price, 0-price))
     if cursor.rowcount > 0:
-        ups = cursor.fetchall()
-    cursor.execute("select user_id from jb_price_notify where coin=%s and price <=%s", (coin, 0 - price))
-    if cursor.rowcount > 0:
-        downs = cursor.fetchall()
+        us = cursor.fetchall()
     conn.commit()
     cursor.close()
     ds = []
-    for up in ups:
-        ds.append(up[0])
-    for down in downs:
-        ds.append(down[0])
+    for u in us:
+        ds.append(u[0])
     return ds
 
-def __notify_price_to_uesr(user_id, coin, name, price):
+def __get_notify_info(user_id, coin, name, price):
     cursor = conn.cursor()
     cursor.execute('select nickname, email from zx_account where user_id=%s', user_id)
     if cursor.rowcount == 0:
@@ -89,8 +88,9 @@ def __notify_price_to_uesr(user_id, coin, name, price):
 
     nickname = d[0]
     email = d[1]
-    content = r'{}{}({})币当前价格为 {} 元，请注意。'.format(nickname, name, coin, price)
-    __do_send_email(content, email)
+    content = '{}, {}({})当前价格为 {} 元，请知悉。'.format(nickname, name, coin, price)
+    r = (content, email)
+    return r
 
 
 def coin_notify(coin, name):
@@ -99,22 +99,47 @@ def coin_notify(coin, name):
         return
     ticker = eval(ticker_str)
     price = ticker['last']
-    us = get_candidate_price_notify(coin, price)
+    us = get_candidate_price_notify_user(coin, price)
+    targets = []
     for u in us:
-        __notify_price_to_uesr(u, coin, name, price)
+        targets.append(__get_notify_info(u, coin, name, price))
+    if len(targets) > 0:
+        __do_send_email(targets)
 
-
+@monitor("notify")
 def notify():
     """
     通知
     :return: 
     """
     coins = __get_all_coins()
+    if len(coins) == 0:
+        return
     keys = coins.keys()
     for coin in keys:
         coin_notify(coin, coins[coin])
 
+def err_listener(event):
+    if event.exception:
+        exstr = traceback.format_exc()
+        logger.error('The job crashed with exception : {0}'.format(event.exception))
+        logger.error(exstr)
+
+def mis_listener(event):
+    logger.warning("Collection job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
 
 if __name__ == '__main__':
-    notify()
-    pass
+    conf = {
+        'apscheduler.job_defaults.coalesce': 'false',
+        'apscheduler.job_defaults.max_instances': '1'
+    }
+    sched = BlockingScheduler(conf)
+    sched.add_job(notify, 'cron', second='20')
+    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
+
+    try:
+        sched.start()
+    except (KeyboardInterrupt, SystemExit):
+        exstr = traceback.format_exc()
+        logger.error(exstr)
