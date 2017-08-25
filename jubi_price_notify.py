@@ -9,7 +9,7 @@ from jubi_common import *
 def __do_send_email(targets):
     """
     发送邮件给目标组
-    :param targets: [(content, recv), ...] 
+    :param targets: [(content, recv, callback, args), ...] 
     :return: 
     """
     if targets is None or len(targets) == 0:
@@ -31,6 +31,7 @@ def __do_send_email(targets):
             msg['To'] = ';'.join(recvs)
             msg['Subject'] = '聚币监控价格提醒'
             server.sendmail(sender, recvs, msg.as_string())
+            target[2](target[3])
     except smtplib.SMTPException as e:
         exstr = traceback.format_exc()
         logger.warn("Error: 发送邮件失败。原因：" + exstr)
@@ -55,7 +56,7 @@ def __get_all_coins():
         coins = eval(coins)
     return coins
 
-def get_candidate_price_notify_user(coin, price):
+def get_candidate_price_notify_info(coin, price):
     """
     获取待提醒用户
     :param coin: 币代码
@@ -65,17 +66,14 @@ def get_candidate_price_notify_user(coin, price):
     """
     us = []
     cursor = conn.cursor()
-    cursor.execute("select user_id from jb_price_notify \
+    cursor.execute("select id, user_id from jb_price_notify \
                     where coin=%s and ((price <=%s AND price > 0) OR (price <= %s AND price < 0))",
                    (coin, price, 0-price))
     if cursor.rowcount > 0:
         us = cursor.fetchall()
     conn.commit()
     cursor.close()
-    ds = []
-    for u in us:
-        ds.append(u[0])
-    return ds
+    return us
 
 def __get_notify_info(user_id, coin, name, price):
     cursor = conn.cursor()
@@ -99,12 +97,22 @@ def coin_notify(coin, name):
         return
     ticker = eval(ticker_str)
     price = ticker['last']
-    us = get_candidate_price_notify_user(coin, price)
+    us = get_candidate_price_notify_info(coin, price)
     targets = []
     for u in us:
-        targets.append(__get_notify_info(u, coin, name, price))
+        userId = u[1]
+        ni = __get_notify_info(userId, coin, name, price)
+        ni += (__delete_price_notify, u[0])
+        targets.append(ni)
     if len(targets) > 0:
         __do_send_email(targets)
+
+def __delete_price_notify(*args):
+    id = args[0]
+    cursor = conn.cursor()
+    cursor.execute('delete from jb_price_notify where id = %s', (id, ))
+    conn.commit()
+    cursor.close()
 
 @monitor("notify")
 def notify():
