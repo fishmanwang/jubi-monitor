@@ -34,37 +34,43 @@ def __send_email(recv, content):
         exstr = traceback.format_exc()
         logger.error("Error: 发送邮件失败。原因：" + exstr)
 
-def __get_prev_price(coin, span):
+def __get_prev_price(coin):
     """
-    获取上次时间
+    获取上次提醒价格
     :param coin: 币
-    :param span: 时间间隔，单位分钟 
     :return: 
     """
-    t = int(time.time()) - (span * 60)
-    cursor = conn.cursor()
-    cursor.execute("select price from jb_coin_ticker where coin=%s and pk <= %s order by pk desc limit 1",
-                   (coin, t))
-    if cursor.rowcount > 0:
-        return float(cursor.fetchone()[0])
-    return 0
+    price = RedisPool.conn.get("cache_ticker_prev_" + coin)
+    if price is None:
+        return 0
+    return float(price)
+
+def __set_prev_price(coin, price):
+    """
+    设置上次提醒价格
+    :param coin: 
+    :return: 
+    """
+    if price is None:
+        price = 0
+    RedisPool.conn.set("cache_ticker_prev_" + coin, price)
 
 def work():
     coin = 'xas'
-    span = 10
-    #recv = '570366997@qq.com'
-    recv = '379590010@qq.com'
+    recv = '570366997@qq.com'
+    #recv = '379590010@qq.com'
     ticker_str = RedisPool.conn.get("cache_ticker_" + coin)
     if ticker_str is None:
         return
     ticker = eval(ticker_str)
     price = ticker['last']
-    prev_price = __get_prev_price(coin, span)
+    prev_price = __get_prev_price(coin)
+    __set_prev_price(coin, price)
     if prev_price == 0:
         content = '当前阿希币价格为：{} 元，请知悉。'.format(price)
     else:
         rate = str(round((price - prev_price)*100/prev_price, 2)) + "%"
-        content = '当前阿希币价格为：{} 元，涨幅： {} ，请知悉。'.format(price, rate)
+        content = '当前阿希币价格为：{} 元，之前价格：{} 元，涨幅： {} ，请知悉。'.format(price, prev_price, rate)
     __send_email(recv, content)
 
 def err_listener(event):
@@ -82,7 +88,7 @@ if __name__ == '__main__':
         'apscheduler.job_defaults.max_instances': '1'
     }
     sched = BlockingScheduler(conf)
-    sched.add_job(work, 'cron', minute='0/1')
+    sched.add_job(work, 'cron', minute='0/20', hour='6-23')
     sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
     sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 
