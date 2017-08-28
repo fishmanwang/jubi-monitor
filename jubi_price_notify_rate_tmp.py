@@ -58,7 +58,7 @@ def __set_prev_price(coin, price):
 
 def work():
     coin = 'xas'
-    recvs = ['570366997@qq.com', '379590010@qq.com', '519992940@qq.com']
+    recvs = ['570366997@qq.com', '379590010@qq.com']
     ticker_str = RedisPool.conn.get("cache_ticker_" + coin)
     if ticker_str is None:
         return
