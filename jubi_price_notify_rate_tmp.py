@@ -7,13 +7,15 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 from jubi_common import *
 
-def __send_email(recv, content):
+def __send_email(recvs, content):
     """
     发送短信
     :param recv: 收件人 
     :param content: 内容
     :return: 
     """
+    if len(recvs) == 0:
+        return
     mail_host = 'smtp.163.com'
     mail_port = 465
     mail_user = 'tjwang516@163.com'
@@ -23,7 +25,6 @@ def __send_email(recv, content):
         server = smtplib.SMTP_SSL(mail_host, mail_port)
         server.login(mail_user, mail_pass)
         content = content
-        recvs = [recv]
         msg = MIMEText(content, _charset='utf-8')
         msg['From'] = 'tjwang516@163.com'
         msg['To'] = ';'.join(recvs)
@@ -57,8 +58,7 @@ def __set_prev_price(coin, price):
 
 def work():
     coin = 'xas'
-    recv = '570366997@qq.com'
-    #recv = '379590010@qq.com'
+    recvs = ['570366997@qq.com', '379590010@qq.com']
     ticker_str = RedisPool.conn.get("cache_ticker_" + coin)
     if ticker_str is None:
         return
@@ -71,7 +71,7 @@ def work():
     else:
         rate = str(round((price - prev_price)*100/prev_price, 2)) + "%"
         content = '当前阿希币价格为：{} 元，之前价格：{} 元，涨幅： {} ，请知悉。'.format(price, prev_price, rate)
-    __send_email(recv, content)
+    __send_email(recvs, content)
 
 def err_listener(event):
     if event.exception:
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         'apscheduler.job_defaults.max_instances': '1'
     }
     sched = BlockingScheduler(conf)
-    sched.add_job(work, 'cron', minute='0/20', hour='6-22')
+    sched.add_job(work, 'cron', minute='0/30', hour='6-22')
     sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
     sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 
