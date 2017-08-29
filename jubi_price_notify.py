@@ -29,7 +29,7 @@ def __do_send_email(targets):
             msg = MIMEText(content, _charset='utf-8')
             msg['From'] = 'tjwang516@163.com'
             msg['To'] = ';'.join(recvs)
-            msg['Subject'] = '聚币监控价格提醒'
+            msg['Subject'] = '聚币监控 - 价格提醒'
             server.sendmail(sender, recvs, msg.as_string())
             target[2](target[3])
     except smtplib.SMTPException:

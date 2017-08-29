@@ -32,6 +32,8 @@ def __send_email_to_user(user_id, infos, callback):
 
     nickname = user[0]
     email = user[1]
+    server = smtplib.SMTP_SSL(mail_host, mail_port)
+    server.login(mail_user, mail_pass)
     for info in infos:
         coin = info[0]
         price = info[1]
@@ -39,21 +41,18 @@ def __send_email_to_user(user_id, infos, callback):
         pk = info[3]
         content = '{}, 当前 {} 价格为：{} 元，涨幅：{}%，请知悉。'.format(nickname, coin, price, rate)
         try:
-            server = smtplib.SMTP_SSL(mail_host, mail_port)
-            server.login(mail_user, mail_pass)
             content = content
             msg = MIMEText(content, _charset='utf-8')
             msg['From'] = sender
             msg['To'] = email
-            msg['Subject'] = '聚币监控涨幅提醒'
-            # server.sendmail(sender, [email], msg.as_string())
+            msg['Subject'] = '聚币监控 - 涨幅提醒'
+            #server.sendmail(sender, [email], msg.as_string())
             print(content)
             callback(user_id, pk, coin)
-            server.close()
         except smtplib.SMTPException:
             exstr = traceback.format_exc()
-            logger.error("Error: 发送邮件失败。原因：" + exstr)
-
+            logger.error("Error: 发送邮件失败。内容：" + content + "。原因：" + exstr)
+    server.close()
 def __get_user_info(user_id):
     c = Mysql.conn.cursor()
     c.execute('select nickname, email from zx_account where user_id = %s', user_id)
@@ -87,7 +86,11 @@ def __notify():
         m[user_id].append((r[0], r[2], r[3], r[4]))
     keys = m.keys()
     for user_id in keys:
-        __send_email_to_user(user_id, m[user_id], __mark_user_notify_info)
+        try:
+            __send_email_to_user(user_id, m[user_id], __mark_user_notify_info)
+        except:
+            exstr = traceback.format_exc()
+            logger.warn(exstr)
     post_notify(cts)
 
 def post_notify(tickers):
