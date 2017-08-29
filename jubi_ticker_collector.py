@@ -16,6 +16,7 @@ headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit
 
 current_tickers_key = "current_tickers_key"
 tickers_map_key = "tickers_map_key"
+span = 10  # 抓取时间间隔
 
 class TickerCollector:
     """
@@ -29,13 +30,14 @@ class TickerCollector:
     @cm_monitor("TickerCollector.collect")
     def collect(self):
         t = int(time.time())
-        t = t - t % 60
         self.__do_collect(t)
         pass
 
     def __do_collect(self, t):
-        tickers = self.__get_tickers(t)
+        pk = t - t % span
+        tickers = self.__get_tickers(pk)
 
+        t = t - t % 60  # 每一分钟存储一条数据到数据库
         ps = []
         for ticker in tickers:
             coin = ticker[0]
@@ -117,7 +119,7 @@ if __name__ == '__main__':
         'apscheduler.job_defaults.max_instances': '1'
     }
     sched = BlockingScheduler(conf)
-    sched.add_job(tc.collect, 'cron', second='0/10')
+    sched.add_job(tc.collect, 'cron', second='0/{}'.format(span))
     sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
     sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 
