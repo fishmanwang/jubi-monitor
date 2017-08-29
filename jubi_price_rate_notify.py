@@ -46,7 +46,8 @@ def __send_email_to_user(user_id, infos, callback):
             msg['From'] = sender
             msg['To'] = email
             msg['Subject'] = '聚币监控涨幅提醒'
-            #server.sendmail(sender, [email], msg.as_string())
+            # server.sendmail(sender, [email], msg.as_string())
+            print(content)
             callback(user_id, pk, coin)
             server.close()
         except smtplib.SMTPException:
@@ -300,12 +301,14 @@ def __get_user_last_notify_time(user_id, coin):
     if info is None:
         return 0
     info = eval(info)
-    pk = info[coin]
-    if pk is None:
-        return 0
+    if coin in info:
+        pk = info[coin]
+    else:
+        pk = 0
     return pk
 
 def work():
+    print("Rate notify monitor work")
     __notify()
 
 def err_listener(event):
@@ -318,4 +321,17 @@ def mis_listener(event):
     logger.warning("Price notify job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
 
 if __name__ == '__main__':
-    work()
+    conf = {
+        'apscheduler.job_defaults.coalesce': 'false',
+        'apscheduler.job_defaults.max_instances': '1'
+    }
+    sched = BlockingScheduler(conf)
+    sched.add_job(work, 'cron', second='0/10', hour='6-22')
+    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
+
+    try:
+        sched.start()
+    except (KeyboardInterrupt, SystemExit):
+        exstr = traceback.format_exc()
+        logger.error(exstr)
