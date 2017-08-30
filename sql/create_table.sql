@@ -46,3 +46,16 @@ CREATE TABLE jb_price_notify(
   INDEX idx_user(user_id),
   INDEX idx_coin_price(coin, price)
 ) COMMENT = '价格提醒表';
+
+DROP TABLE IF EXISTS jb_price_rate_notify;
+CREATE TABLE jb_price_rate_notify(
+  id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  enabled TINYINT NOT NULL DEFAULT 0 COMMENT '是否启用：0.否；1.是',
+  user_id INT NOT NULL,
+  coin VARCHAR(16) NOT NULL,
+  `interval` INT NOT NULL DEFAULT 10 COMMENT '时间间隔',
+  rate DECIMAL(10,2) NOT NULL DEFAULT 1.5 COMMENT '涨跌幅',
+  create_time DATETIME,
+  update_time DATETIME,
+  UNIQUE(user_id, coin)
+) COMMENT = '价格涨幅提醒';
