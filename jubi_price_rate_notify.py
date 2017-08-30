@@ -38,7 +38,7 @@ def __send_email_to_user(user_id, infos, callback):
         price = info[1]
         rate = info[2]
         pk = info[3]
-        content = '当前 {} 价格为：{} 元，涨幅：{}%，请知悉。'.format(coin, price, rate)
+        content = '当前 {} 价格为：{} 元，价格波动：{}%，请知悉。'.format(coin, price, rate)
         contents.append(content)
 
     try:
@@ -48,7 +48,7 @@ def __send_email_to_user(user_id, infos, callback):
         msg = MIMEText(content, _charset='utf-8')
         msg['From'] = sender
         msg['To'] = email
-        msg['Subject'] = '聚币监控 - 涨幅提醒'
+        msg['Subject'] = '聚币监控 - 波动提醒'
         server.sendmail(sender, [email], msg.as_string())
         #print(content)
         callback(user_id, pk, coin)
