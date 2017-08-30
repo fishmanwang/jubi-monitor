@@ -38,7 +38,7 @@ def __send_email_to_user(user_id, infos, callback):
         price = info[1]
         rate = info[2]
         pk = info[3]
-        content = '当前 {} 价格为：{} 元，价格波动：{}%，请知悉。'.format(coin, price, rate)
+        content = '当前 {} 价格为：{} 元，价格波动：{}%，请知悉。'.format(coin.upper(), price, rate)
         contents.append(content)
 
     try:
