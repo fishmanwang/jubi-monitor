@@ -1,10 +1,9 @@
 import time
 import traceback
-import smtplib
-from email.mime.text import MIMEText
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from email_sender import send_email
 from jubi_common_func import *
 from jubi_log import logger
 
@@ -24,12 +23,6 @@ def __send_email_to_user(user_id, infos, callback):
     if user is None:
         return
 
-    mail_host = 'smtp.163.com'
-    mail_port = 465
-    mail_user = 'tjwang516@163.com'
-    mail_pass = 'Admin123'
-    sender = 'tjwang516@163.com'
-
     nickname = user[0]
     email = user[1]
     contents = []
@@ -40,23 +33,10 @@ def __send_email_to_user(user_id, infos, callback):
         pk = info[3]
         content = '当前 {} 价格为：{} 元，价格波动：{}%，请知悉。'.format(coin.upper(), price, rate)
         contents.append(content)
-
-    try:
         content = nickname + ":\t\r\n" + '\t\r\n'.join(contents)
-        server = smtplib.SMTP_SSL(mail_host, mail_port)
-        server.login(mail_user, mail_pass)
-        msg = MIMEText(content, _charset='utf-8')
-        msg['From'] = sender
-        msg['To'] = email
-        msg['Subject'] = '聚币监控 - 波动提醒'
+        subject = '聚币监控 - 波动提醒'
         #server.sendmail(sender, [email], msg.as_string())
-        print(content)
-        callback(user_id, pk, coin)
-        server.close()
-    except smtplib.SMTPException:
-        exstr = traceback.format_exc()
-        logger.error("Error: 发送邮件失败。内容：" + content + "。原因：" + exstr)
-
+        send_email(email, subject, content, callback, (user_id, pk, coin))
 def __get_user_info(user_id):
     c = Mysql.conn.cursor()
     c.execute('select nickname, email from zx_account where user_id = %s', user_id)
@@ -279,12 +259,15 @@ def __clear_old_cache(ticker):
         if (pk - int(key)) > 3600:
             RedisPool.conn.hdel(cache_coin_price_rate + coin, key)
 
-def __mark_user_notify_info(user_id, pk, coin):
+def __mark_user_notify_info(data):
     """
     标记用户发送邮件时间。在发送邮件后需要。
     :param coin: 
     :return: 
     """
+    user_id = data[0]
+    pk = data[1]
+    coin = data[2]
     info = RedisPool.conn.hget(notify_last_pk_cache_key, user_id)
     if info is None:
         info = {}
