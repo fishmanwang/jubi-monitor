@@ -11,6 +11,8 @@ from jubi_log import logger
 
 notify_rates = [1, 2, 3, 4, 5]  # 通知的结点
 
+cache_rate_notify_price_prev_prefix = "cache_rate_notify_price_prev_"
+
 def __send_email_to_user(user_id, infos, callback):
     """
     发送邮件给用户
@@ -63,6 +65,25 @@ def __get_user_info(user_id):
     c.execute('select nickname, email from zx_account where user_id = %s', user_id)
     return c.fetchone()
 
+def __get_prec_price(span, coin):
+    """
+    获取上一次价格，用于对比
+    :param span: 间隔时间
+    :param coin: 币
+    :return: 
+    """
+    key = __get_prev_price_cache_key(span, coin)
+    RedisPool.conn.get(key)
+
+def __get_prev_price_cache_key(span, coin):
+    """
+    获取上次价格的缓存键
+    :param span: 间隔时间
+    :param coin: 
+    :return: 
+    """
+    return cache_rate_notify_price_prev_prefix + coin + "_" + str(span)
+
 def __notify():
     """
     发送通知
@@ -77,9 +98,9 @@ def __notify():
     cts = __get_current_tickers(coins)
     if len(cts) == 0:
         return
-    # rs = []
-    # for coin in keys:
-    #     rs.extend(__get_coin_notify(coin, m[coin], cts[coin]))
+    rs = []
+    for coin in keys:
+        rs.extend(__get_coin_notify(coin, m[coin], cts[coin]))
     # if len(rs) == 0:
     #     post_notify(cts)
     #     return
