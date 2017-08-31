@@ -1,6 +1,7 @@
 import time
 import traceback
 import smtplib
+from itertools import groupby
 from email.mime.text import MIMEText
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -8,7 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from jubi_common_func import *
 from jubi_log import logger
 
-notify_last_pk_cache_key = "notify_last_pk"  # 上次通知用户的时间
+notify_rates = [1, 2, 3, 4, 5]  # 通知的结点
 
 def __send_email_to_user(user_id, infos, callback):
     """
@@ -70,28 +71,29 @@ def __notify():
     m = __aggregate_by_coin()
     if len(m) == 0:
         return
+    print(str(m))
     keys = m.keys()
     coins = get_all_coins()
     cts = __get_current_tickers(coins)
     if len(cts) == 0:
         return
-    rs = []
-    for coin in keys:
-        rs.extend(__get_coin_notify(coin, m[coin], cts[coin]))
-    if len(rs) == 0:
-        post_notify(cts)
-        return
-
-    m = {}
-    for r in rs:
-        user_id = r[1]
-        if user_id not in m:
-            m[user_id] = []
-        m[user_id].append((r[0], r[2], r[3], r[4]))
-    keys = m.keys()
-    for user_id in keys:
-        __send_email_to_user(user_id, m[user_id], __mark_user_notify_info)
-    post_notify(cts)
+    # rs = []
+    # for coin in keys:
+    #     rs.extend(__get_coin_notify(coin, m[coin], cts[coin]))
+    # if len(rs) == 0:
+    #     post_notify(cts)
+    #     return
+    #
+    # m = {}
+    # for r in rs:
+    #     user_id = r[1]
+    #     if user_id not in m:
+    #         m[user_id] = []
+    #     m[user_id].append((r[0], r[2], r[3], r[4]))
+    # keys = m.keys()
+    # for user_id in keys:
+    #     __send_email_to_user(user_id, m[user_id], __mark_user_notify_info)
+    # post_notify(cts)
 
 def post_notify(tickers):
     """
@@ -191,26 +193,26 @@ def __get_history_min_max(interval, cur_pk, his, last_pk):
 def __aggregate_by_coin():
     """
     通过币聚合配置信息
-    :return: dict - {coin: [(user_id, coin, interval, rate)]}
+    :return: dict - {coin: [(user_id, coin, rate)]}
     """
     ss = __get_settings()
     if len(ss) == 0:
         return
     m = {}
-    for s in ss:
-        coin = s[1]
-        if coin not in m:
-            m[coin] = []
-        m[coin].append(s)
+    def key_f(p):
+        return p[1]
+    ss = sorted(ss, key=key_f)
+    for key, group in groupby(ss, key=key_f):
+        m[key] = list(group)
     return m
 
 def __get_settings():
     """
     获取所有配置信息
-    :return: list - [(user_id, coin, interval, rate)]
+    :return: list - [(user_id, coin, rate)]
     """
     c = Mysql.conn.cursor()
-    c.execute('select user_id, coin, `interval`, rate from jb_price_rate_notify where enabled = 1')
+    c.execute('select user_id, coin, rate from jb_price_rate_notify')
     return c.fetchall()
 
 def __get_current_tickers(coins):
@@ -324,17 +326,18 @@ def mis_listener(event):
     logger.warning("Price notify job misfired at {}".format(time.strftime("%Y-%m-%d %X")))
 
 if __name__ == '__main__':
-    conf = {
-        'apscheduler.job_defaults.coalesce': 'false',
-        'apscheduler.job_defaults.max_instances': '1'
-    }
-    sched = BlockingScheduler(conf)
-    sched.add_job(work, 'cron', second='0/10', hour='6-22')
-    sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
-    sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
-
-    try:
-        sched.start()
-    except (KeyboardInterrupt, SystemExit):
-        exstr = traceback.format_exc()
-        logger.error(exstr)
+    work()
+    # conf = {
+    #     'apscheduler.job_defaults.coalesce': 'false',
+    #     'apscheduler.job_defaults.max_instances': '1'
+    # }
+    # sched = BlockingScheduler(conf)
+    # sched.add_job(work, 'cron', second='0/10', hour='6-22')
+    # sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
+    # sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
+    #
+    # try:
+    #     sched.start()
+    # except (KeyboardInterrupt, SystemExit):
+    #     exstr = traceback.format_exc()
+    #     logger.error(exstr)
