@@ -31,7 +31,8 @@ def __send_email_to_user(user_id, infos, callback):
         price = info[1]
         rate = info[2]
         pk = info[3]
-        content = '当前 {} 价格为：{} 元，价格波动：{}%，请知悉。'.format(coin.upper(), price, rate)
+        cmp_price = info[4]
+        content = '当前 {} 价格为：{} 元，价格波动：{}%，对比价格 {} 元,请知悉。'.format(coin.upper(), price, rate, cmp_price)
         contents.append(content)
         content = nickname + ":\t\r\n" + '\t\r\n'.join(contents)
         subject = '聚币监控 - 波动提醒'
@@ -67,7 +68,7 @@ def __notify():
         user_id = r[1]
         if user_id not in m:
             m[user_id] = []
-        m[user_id].append((r[0], r[2], r[3], r[4]))
+        m[user_id].append((r[0], r[2], r[3], r[4], r[5]))
     keys = m.keys()
     for user_id in keys:
         __send_email_to_user(user_id, m[user_id], __mark_user_notify_info)
@@ -95,7 +96,7 @@ def __get_coin_notify(coin, ss, ticker):
     :param coin: 币 
     :param ss: 通知配置; list - [(user_id, coin, span, rate)]
     :param ticker: 当前行情; tuple - (pk, price)
-    :return: list - [(coin, user_id, price, rate, pk)]
+    :return: list - [(coin, user_id, price, rate, pk, cmp_price)]
     """
     if len(ticker) == 0:
         return
@@ -121,7 +122,7 @@ def __do_get_coin_notify(coin, user_id, span, rate, ticker, his):
     :param rate: 涨跌幅
     :param ticker: 当前行情 (pk, price)
     :param his: 历史数据 dict - {pk: price}
-    :return: tuple - (coin, user_id, price, rate, pk)
+    :return: tuple - (coin, user_id, price, rate, pk, cmp_price)
     """
     cur_pk = ticker[0]
     cur_price = ticker[1]
@@ -132,12 +133,12 @@ def __do_get_coin_notify(coin, user_id, span, rate, ticker, his):
     if cur_price > min:
         minr = __get_rate(cur_price, min)
         if abs(minr) >= rate:
-            r = (coin, user_id, cur_price, minr, cur_pk)
+            r = (coin, user_id, cur_price, minr, cur_pk, minr)
             return r
     if cur_price < max:
         maxr = __get_rate(cur_price, max)
         if abs(maxr) >= rate:
-            r = (coin, user_id, cur_price, maxr, cur_pk)
+            r = (coin, user_id, cur_price, maxr, cur_pk, maxr)
             return r
     return
 

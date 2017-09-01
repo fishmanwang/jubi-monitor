@@ -124,7 +124,7 @@ def __get_user_notify_content(coin, monitor_rate, cts):
     prev_pk = prev_ticker[0]
     prev_price = prev_ticker[1]
     rate = __get_rate(cur_price, prev_price)
-    return '{} 当前价格 {} ({}), 涨幅 {}%, 对比价格 {} ({})'.format(coin, cur_price, __format_time(cur_pk), rate, prev_price, __format_time(prev_pk))
+    return '{} 当前价格 {} 元({})， 涨幅 {}%， 对比价格 {} 元({})，请知悉。'.format(coin, cur_price, __format_time(cur_pk), rate, prev_price, __format_time(prev_pk))
 
 def __get_uesr_info(user_id):
     """
