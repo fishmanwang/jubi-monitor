@@ -4,6 +4,7 @@ from itertools import groupby
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from jubi_aop_monitor import monitor
 from jubi_common_func import *
 from jubi_log import logger
 from jubi_email_sender import send_email
@@ -18,8 +19,6 @@ def __get_monitor_setting():
     c.execute('select distinct rate from jb_price_rate_monitor_setting')
     rs.extend([d[0] for d in c.fetchall()])
     return rs
-
-monitor_rates = __get_monitor_setting()  # 通知的结点
 
 subject = '聚币监控 - 涨幅提醒'
 cache_rate_notify_price_prev_prefix = "cache_price_rate_notify_prev_"
@@ -40,6 +39,7 @@ def __notify():
     :return: 
     """
     coins = get_all_coins()
+    monitor_rates = __get_monitor_setting()  # 通知的结点
     if len(coins) == 0:
         return
     cts = get_current_tickers(coins.keys())
@@ -231,6 +231,7 @@ def __get_prev_price_cache_key(coin, rate):
     """
     return cache_rate_notify_price_prev_prefix + coin + "_" + str(rate)
 
+@monitor("work")
 def work():
     logger.info("Price rate notify monitor work")
     __notify()
