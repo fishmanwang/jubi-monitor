@@ -75,7 +75,7 @@ def __format_time(pk):
     :return: 
     """
     time_array = time.localtime(pk)
-    return time.strftime('%M:%S', time_array)
+    return time.strftime('%H:%M', time_array)
 
 def __get_user_content_map(rs, cts):
     """
