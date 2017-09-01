@@ -48,14 +48,33 @@ CREATE TABLE jb_price_notify(
 ) COMMENT = '价格提醒表';
 
 DROP TABLE IF EXISTS jb_price_rate_notify;
-CREATE TABLE jb_price_rate_notify(
-  id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-  enabled TINYINT NOT NULL DEFAULT 0 COMMENT '是否启用：0.否；1.是',
-  user_id INT NOT NULL,
-  coin VARCHAR(16) NOT NULL,
-  `interval` INT NOT NULL DEFAULT 10 COMMENT '时间间隔',
-  rate DECIMAL(10,2) NOT NULL DEFAULT 1.5 COMMENT '涨跌幅',
-  create_time DATETIME,
-  update_time DATETIME,
-  UNIQUE(user_id, coin)
-) COMMENT = '价格涨幅提醒';
+CREATE TABLE `jb_price_rate_notify` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `user_id` INT(11) NOT NULL,
+  `coin` VARCHAR(16) NOT NULL,
+  `rate` INT NOT NULL DEFAULT '5' COMMENT '监控的涨跌幅度',
+  `create_time` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`,`coin`)
+) ENGINE=INNODB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='价格涨幅提醒';
+
+DROP TABLE IF EXISTS jb_price_wave_notify;
+CREATE TABLE `jb_price_wave_notify` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `coin` varchar(16) NOT NULL,
+  `span` int(11) NOT NULL DEFAULT '10' COMMENT '时间间隔',
+  `rate` decimal(10,2) NOT NULL DEFAULT '2.00' COMMENT '波动幅',
+  `create_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`,`coin`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COMMENT='价格波动提醒';
+
+DROP TABLE IF EXISTS jb_price_rate_monitor_setting;
+CREATE TABLE jb_price_rate_monitor_setting(
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `rate` INT NOT NULL DEFAULT 5 COMMENT '可监控幅度',
+  `create_time` DATE,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY(`rate`)
+) COMMENT = '配置可监控幅度';

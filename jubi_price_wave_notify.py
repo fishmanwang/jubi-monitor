@@ -3,7 +3,7 @@ import traceback
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-from email_sender import send_email
+from jubi_email_sender import send_email
 from jubi_common_func import *
 from jubi_log import logger
 
@@ -36,7 +36,7 @@ def __send_email_to_user(user_id, infos, callback):
         content = nickname + ":\t\r\n" + '\t\r\n'.join(contents)
         subject = '聚币监控 - 波动提醒'
         #server.sendmail(sender, [email], msg.as_string())
-        send_email(email, subject, content, callback, (user_id, pk, coin))
+        send_email(email, subject, content, callback=callback, param=(user_id, pk, coin))
 def __get_user_info(user_id):
     c = Mysql.conn.cursor()
     c.execute('select nickname, email from zx_account where user_id = %s', user_id)
