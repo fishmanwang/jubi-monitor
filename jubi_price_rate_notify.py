@@ -52,12 +52,12 @@ def __notify():
             if r is not None:
                 rs.append(r)
 
-    print(rs)
+    logger.info(rs)
     if len(rs) == 0:
         return
 
     ucm = __get_user_content_map(rs, cts)
-    print(ucm)
+    logger.info(ucm)
     for user_id in ucm.keys():
         user = __get_user_info(user_id)
         content = ucm[user_id]
@@ -232,7 +232,7 @@ def __get_prev_price_cache_key(coin, rate):
     return cache_rate_notify_price_prev_prefix + coin + "_" + str(rate)
 
 def work():
-    print("Price rate notify monitor work")
+    logger.info("Price rate notify monitor work")
     __notify()
 
 def err_listener(event):
