@@ -27,6 +27,7 @@ def send_email(target, subject, content, callback=None, params=None):
         msg['To'] = target
         msg['Subject'] = subject
         server.sendmail(sender, [target], msg.as_string())
+        #print(content)
         if callback:
             callback(params)
         server.close()

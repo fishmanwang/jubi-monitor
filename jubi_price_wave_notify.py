@@ -37,7 +37,7 @@ def __send_email_to_user(user_id, infos, callback):
         content = nickname + ":\t\r\n" + '\t\r\n'.join(contents)
         subject = '聚币监控 - 波动提醒'
         #server.sendmail(sender, [email], msg.as_string())
-        send_email(email, subject, content, callback=callback, param=(user_id, pk, coin))
+        send_email(email, subject, content, callback=callback, params=(user_id, pk, coin))
 def __get_user_info(user_id):
     c = Mysql.conn.cursor()
     c.execute('select nickname, email from zx_account where user_id = %s', user_id)
@@ -133,12 +133,12 @@ def __do_get_coin_notify(coin, user_id, span, rate, ticker, his):
     if cur_price > min:
         minr = __get_rate(cur_price, min)
         if abs(minr) >= rate:
-            r = (coin, user_id, cur_price, minr, cur_pk, minr)
+            r = (coin, user_id, cur_price, minr, cur_pk, min)
             return r
     if cur_price < max:
         maxr = __get_rate(cur_price, max)
         if abs(maxr) >= rate:
-            r = (coin, user_id, cur_price, maxr, cur_pk, maxr)
+            r = (coin, user_id, cur_price, maxr, cur_pk, max)
             return r
     return
 
