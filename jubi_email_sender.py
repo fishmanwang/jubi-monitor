@@ -49,8 +49,8 @@ def __do_send_email(email, subject, content):
         msg['From'] = sender
         msg['To'] = email
         msg['Subject'] = subject
-        #server.sendmail(sender, [email], msg.as_string())
-        print(content)
+        server.sendmail(sender, [email], msg.as_string())
+        #print(content)
         server.close()
         return True, ''
     except smtplib.SMTPException:
