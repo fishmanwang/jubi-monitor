@@ -23,16 +23,6 @@ def __get_monitor_setting():
 subject = '聚币监控 - 涨幅提醒'
 cache_rate_notify_price_prev_prefix = "cache_price_rate_notify_prev_"
 
-def __get_user_info(user_id):
-    """
-    获取用户信息
-    :param user_id: 
-    :return: tuple - (nickname, email)
-    """
-    c = Mysql.conn.cursor()
-    c.execute('select nickname, email from zx_account where user_id = %s', user_id)
-    return c.fetchone()
-
 def __notify():
     """
     发送通知
@@ -59,11 +49,8 @@ def __notify():
     ucm = __get_user_content_map(rs, cts)
     logger.info(ucm)
     for user_id in ucm.keys():
-        user = __get_user_info(user_id)
         content = ucm[user_id]
-        nickname = user[0]
-        email = user[1]
-        content = "{}:\r\n{}".format(nickname, content)
+        content = "\r\n{}".format(content)
         send_email(user_id, subject, content, 3)
 
     __set_coin_prev_ticker_after_montor_matched(rs, cts)
