@@ -1,3 +1,4 @@
+import time
 import datetime
 import traceback
 import smtplib
@@ -7,6 +8,7 @@ from jubi_redis import *
 import jubi_mysql as Mysql
 from jubi_log import logger
 from jubi_common_func import email_sending_queue_key
+from jubi_common_func import get_day_begin_time_int
 
 # 发送短信服务
 
@@ -15,14 +17,20 @@ def __send_email(user_id, subject, content, notify_type):
     if not u:
         logger.warn("id为 {} 的用户不存在".format(user_id))
         return
+
     nickname = u[0]
     email = u[1]
     content = nickname + ":\r\n" + content
 
+    num = __get_user_email_send_count(user_id)
+    if (num > 1):
+        __record(user_id, notify_type, email, False, content, '超限')
+        return
+
     succ, reason = __do_send_email(email, subject, content)
     __record(user_id, notify_type, email, succ, content, reason)
 
-    pass
+    __set_user_email_send_count(user_id, num+1)
 
 
 def __do_send_email(email, subject, content):
@@ -71,6 +79,26 @@ def __get_uesr_info(user_id):
     if c.rowcount == 0:
         return
     return c.fetchone()
+
+cache_email_user_limit_key = "py_email_user_limit"
+
+def __get_user_email_send_count(user_id):
+    """
+    获取用户短信发送数量
+    """
+    num = RedisPool.conn.hget(cache_email_user_limit_key, user_id)
+    if num is None:
+        num = 0
+
+    return num
+
+
+def __set_user_email_send_count(user_id, num):
+    RedisPool.conn.hset(cache_email_user_limit_key, user_id, num)
+
+    if -1 == RedisPool.conn.ttl(cache_email_user_limit_key):
+        t = get_day_begin_time_int(int(time.time())) + 86400
+        RedisPool.conn.expire(cache_email_user_limit_key, t)
 
 
 def __work():

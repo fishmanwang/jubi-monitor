@@ -7,7 +7,6 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from jubi_aop_monitor import monitor
 from jubi_common_func import *
 from jubi_log import logger
-#from jubi_email import send_email
 from jubi_common_func import send_email
 
 def __get_monitor_setting():
