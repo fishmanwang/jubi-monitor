@@ -3,9 +3,9 @@ import traceback
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-from jubi_email_sender import send_email
 from jubi_common_func import *
 from jubi_log import logger
+from jubi_email_sender import email_sending_queue_key
 
 notify_last_pk_cache_key = "notify_last_pk"  # 上次通知用户的时间
 
@@ -19,12 +19,7 @@ def __send_email_to_user(user_id, infos, callback):
     """
     if len(infos) == 0:
         return
-    user = __get_user_info(user_id)
-    if user is None:
-        return
 
-    nickname = user[0]
-    email = user[1]
     contents = []
     for info in infos:
         coin = info[0]
@@ -34,10 +29,13 @@ def __send_email_to_user(user_id, infos, callback):
         cmp_price = info[4]
         content = '当前 {} 价格为：{} 元，价格波动：{}%，对比价格 {} 元,请知悉。'.format(coin.upper(), price, rate, cmp_price)
         contents.append(content)
-        content = nickname + ":\t\r\n" + '\t\r\n'.join(contents)
-        subject = '聚币监控 - 波动提醒'
-        #server.sendmail(sender, [email], msg.as_string())
-        send_email(email, subject, content, callback=callback, params=(user_id, pk, coin))
+        params = (user_id, pk, coin)
+        callback(params)
+    content = '\t\r\n'.join(contents)
+    subject = '聚币监控 - 波动提醒'
+    RedisPool.conn.rpush(email_sending_queue_key, (user_id, subject, content, 2))
+    #send_email(email, subject, content, callback=callback, )
+
 def __get_user_info(user_id):
     c = Mysql.conn.cursor()
     c.execute('select nickname, email from zx_account where user_id = %s', user_id)
@@ -262,7 +260,7 @@ def __clear_old_cache(ticker):
 
 def __mark_user_notify_info(data):
     """
-    标记用户发送邮件时间。在发送邮件后需要。
+    标记用户提醒时间。在提醒后触发。
     :param coin: 
     :return: 
     """
