@@ -12,6 +12,8 @@ from jubi_common_func import get_day_begin_time_int
 
 # 发送短信服务
 
+unlimit_users = set((1,))  # 不设限用户
+
 def __send_email(user_id, subject, content, notify_type):
     u = __get_uesr_info(user_id)
     if not u:
@@ -23,7 +25,7 @@ def __send_email(user_id, subject, content, notify_type):
     content = nickname + ":\r\n" + content
 
     num = __get_user_email_send_count(user_id)
-    if (num > 1):
+    if (num >= 50 and (user_id not in unlimit_users)):
         __record(user_id, notify_type, email, False, content, '超限')
         return
 
