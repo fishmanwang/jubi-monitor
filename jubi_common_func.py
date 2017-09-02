@@ -4,14 +4,15 @@
 from jubi_redis import RedisPool
 import jubi_mysql as Mysql
 
-__all_coin_key = 'py_all_coins'
+all_coin_key = 'py_all_coins'
+email_sending_queue_key = 'email_sending_queue'
 
 def get_all_coins():
     """
     获取所有币信息
     :return: dict - {code:name}
     """
-    coins = RedisPool.conn.get(__all_coin_key)
+    coins = RedisPool.conn.get(all_coin_key)
     if coins is None:
         cursor = Mysql.conn.cursor()
         cursor.execute("select code, name from jb_coin")
@@ -23,7 +24,7 @@ def get_all_coins():
             code = d[0]
             name = d[1]
             coins[code] = name
-        RedisPool.conn.set(__all_coin_key, str(coins), nx=True, ex=3600)
+        RedisPool.conn.set(all_coin_key, str(coins), nx=True, ex=3600)
     if type(coins) != dict:
         coins = eval(coins)
     return coins
@@ -52,3 +53,6 @@ def get_current_tickers(coins):
         price = t['last']
         ts[coin] = (pk, price)
     return ts
+
+def send_email(user_id, subject, content, monitor_type) :
+    RedisPool.conn.rpush(email_sending_queue_key, (user_id, subject, content, monitor_type))

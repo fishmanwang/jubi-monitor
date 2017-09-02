@@ -6,6 +6,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from jubi_common_func import *
 from jubi_log import logger
 from jubi_email_sender import email_sending_queue_key
+from jubi_common_func import send_email
 
 notify_last_pk_cache_key = "notify_last_pk"  # 上次通知用户的时间
 
@@ -33,8 +34,7 @@ def __send_email_to_user(user_id, infos, callback):
         callback(params)
     content = '\t\r\n'.join(contents)
     subject = '聚币监控 - 波动提醒'
-    RedisPool.conn.rpush(email_sending_queue_key, (user_id, subject, content, 2))
-    #send_email(email, subject, content, callback=callback, )
+    send_email(user_id, subject, content, 2)
 
 def __get_user_info(user_id):
     c = Mysql.conn.cursor()

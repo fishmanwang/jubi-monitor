@@ -5,38 +5,8 @@ from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from jubi_common import *
-
-def __do_send_email(targets):
-    """
-    发送邮件给目标组
-    :param targets: [(content, recv, callback, args), ...] 
-    :return: 
-    """
-    if targets is None or len(targets) == 0:
-        return
-    
-    mail_host = 'smtp.163.com'
-    mail_port = 465
-    mail_user = 'tjwang516@163.com'
-    mail_pass = 'Admin123'
-    sender = 'tjwang516@163.com'
-    try:
-        server = smtplib.SMTP_SSL(mail_host, mail_port)
-        server.login(mail_user, mail_pass)
-        for target in targets:
-            content = target[0]
-            recvs = [target[1]]
-            msg = MIMEText(content, _charset='utf-8')
-            msg['From'] = 'tjwang516@163.com'
-            msg['To'] = ';'.join(recvs)
-            msg['Subject'] = '聚币监控 - 价格提醒'
-            server.sendmail(sender, recvs, msg.as_string())
-            target[2](target[3])
-    except smtplib.SMTPException:
-        exstr = traceback.format_exc()
-        logger.error("Error: 发送邮件失败。原因：" + exstr)
-
-all_coin_key = 'py_all_coins'
+from jubi_common_func import send_email
+from jubi_common_func import all_coin_key
 
 def __get_all_coins():
     """
@@ -66,7 +36,7 @@ def get_candidate_price_notify_info(coin, price):
     :param coin: 币代码
     :param name: 币名
     :param price: 
-    :return: 
+    :return: (id, user_id)
     """
     us = []
     cursor = conn.cursor()
@@ -87,7 +57,7 @@ def __get_notify_info(user_id, coin, name, price):
     :param coin: xas
     :param name: 阿希币
     :param price: 价格
-    :return: 
+    :return: tuple - (user_id, content)
     """
     cursor = conn.cursor()
     cursor.execute('select nickname, email from zx_account where user_id=%s', user_id)
@@ -99,8 +69,8 @@ def __get_notify_info(user_id, coin, name, price):
 
     nickname = d[0]
     email = d[1]
-    content = '{}, {}({})当前价格为 {} 元，请知悉。'.format(nickname, name, coin, price)
-    r = (content, email)
+    content = '{}({})当前价格为 {} 元，请知悉。'.format(name, coin, price)
+    r = (user_id, content)
     return r
 
 def coin_notify(coin, name):
@@ -116,24 +86,32 @@ def coin_notify(coin, name):
     ticker = eval(ticker_str)
     price = ticker['last']
     us = get_candidate_price_notify_info(coin, price)
-    targets = []
-    for u in us:
-        userId = u[1]
-        ni = __get_notify_info(userId, coin, name, price)
-        ni += (__delete_price_notify, u[0])
-        targets.append(ni)
-    if len(targets) > 0:
-        __do_send_email(targets)
 
-def __delete_price_notify(*args):
+    if len(us) == 0:
+        return
+
+    subject = '聚币监控 - 价格提醒'
+    content = '{}({})当前价格为 {} 元，请知悉。'.format(name, coin.upper(), price)
+
+    user_set = set()
+    del_ids = []
+    for u in us:
+        del_ids.append(u[0])
+        user_set.add(u[1])
+
+    for user_id in user_set:
+        send_email(user_id, subject, content, 1)
+
+    __delete_price_notify(del_ids)
+
+def __delete_price_notify(ids):
     """
     通知成功后，删除价格提醒设置
-    :param args: 
+    :param ids: list 
     :return: 
     """
-    pnid = args[0]
     cursor = conn.cursor()
-    cursor.execute('delete from jb_price_notify where id = %s', (pnid, ))
+    cursor.execute('delete from jb_price_notify where id in %s', (ids, ))
     conn.commit()
     cursor.close()
 
@@ -166,7 +144,7 @@ if __name__ == '__main__':
         'apscheduler.job_defaults.max_instances': '1'
     }
     sched = BlockingScheduler(conf)
-    sched.add_job(notify, 'cron', second='20/30')
+    sched.add_job(notify, 'cron', second='0/10', hour='6-22')
     sched.add_listener(err_listener, events.EVENT_JOB_ERROR)
     sched.add_listener(mis_listener, events.EVENT_JOB_MISSED)
 

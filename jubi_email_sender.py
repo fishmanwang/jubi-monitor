@@ -6,11 +6,9 @@ from email.mime.text import MIMEText
 from jubi_redis import *
 import jubi_mysql as Mysql
 from jubi_log import logger
+from jubi_common_func import email_sending_queue_key
 
 # 发送短信服务
-
-email_sending_queue_key = 'email_sending_queue'
-
 
 def __send_email(user_id, subject, content, notify_type):
     u = __get_uesr_info(user_id)
@@ -41,8 +39,8 @@ def __do_send_email(email, subject, content):
         msg['From'] = sender
         msg['To'] = email
         msg['Subject'] = subject
-        server.sendmail(sender, [email], msg.as_string())
-        # print(content)
+        #server.sendmail(sender, [email], msg.as_string())
+        print(content)
         server.close()
         return True, ''
     except smtplib.SMTPException:
