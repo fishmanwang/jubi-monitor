@@ -90,7 +90,7 @@ def __get_user_email_send_count(user_id):
     if num is None:
         num = 0
 
-    return num
+    return int(num)
 
 
 def __set_user_email_send_count(user_id, num):
