@@ -100,7 +100,7 @@ def __set_user_email_send_count(user_id, num):
 
     if -1 == RedisPool.conn.ttl(cache_email_user_limit_key):
         t = get_day_begin_time_int(int(time.time())) + 86400
-        RedisPool.conn.expire(cache_email_user_limit_key, t)
+        RedisPool.conn.expireat(cache_email_user_limit_key, t)
 
 
 def __work():
