@@ -207,6 +207,8 @@ def __is_notify_match(cur_price, prev_price, rate):
     return abs(__get_rate(cur_price, prev_price)) >= rate
 
 def __get_rate(cur_price, prev_price):
+    if prev_price == 0:
+        return 0
     return round((cur_price - prev_price) / prev_price * 100, 2)
 
 def __get_prev_price_cache_key(coin, rate):
