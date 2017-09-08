@@ -78,3 +78,11 @@ CREATE TABLE jb_price_rate_monitor_setting(
   PRIMARY KEY (`id`),
   UNIQUE KEY(`rate`)
 ) COMMENT = '配置可监控幅度';
+
+DROP TABLE IF EXISTS jb_user_grade;
+CREATE TABLE jb_user_grade(
+  id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  grade TINYINT(4) NOT NULL DEFAULT 0,
+  email_count INT NOT NULL DEFAULT 20 COMMENT '可发送邮件数',
+  create_time DATETIME
+) COMMENT='用户等级';

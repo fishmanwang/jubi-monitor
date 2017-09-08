@@ -2,6 +2,7 @@ import time
 import datetime
 import traceback
 import smtplib
+import pymysql
 from email.mime.text import MIMEText
 
 from jubi_redis import *
@@ -63,11 +64,10 @@ def __record(user_id, notify_type, email, succ, content, reason):
     content = content[:60].replace('\r\n', ' ')
     reason = reason[:60]
     send_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c = Mysql.conn.cursor()
-    c.execute("insert into jubi_email_send_record(user_id, notify_type, email, succ, content, send_time, reason) \
-              values (%s, %s, %s, %s, %s, %s, %s)", (user_id, notify_type, email, succ, content, send_time, reason))
-    Mysql.conn.commit()
-    c.close()
+    with Mysql.pool as db:
+        db.cursor.execute("insert into jubi_email_send_record(user_id, notify_type, email, succ, content, send_time, reason) \
+                  values (%s, %s, %s, %s, %s, %s, %s)", (user_id, notify_type, email, succ, content, send_time, reason))
+        db.conn.commit()
 
 
 def __get_uesr_info(user_id):
@@ -76,11 +76,12 @@ def __get_uesr_info(user_id):
     :param user_id: 
     :return: tuple - (nickname, email) 
     """
-    c = Mysql.conn.cursor()
-    c.execute("select nickname, email from zx_account where user_id=%s", (user_id,))
-    if c.rowcount == 0:
-        return
-    return c.fetchone()
+    with Mysql.pool as db:
+        c = db.cursor
+        c.execute("select nickname, email from zx_account where user_id=%s", (user_id,))
+        if c.rowcount == 0:
+            return
+        return c.fetchone()
 
 cache_email_user_limit_key = "py_email_user_limit"
 
