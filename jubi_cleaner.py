@@ -1,8 +1,10 @@
 import traceback
-
-from jubi_common import *
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
+
+from jubi_common_func import *
+from jubi_aop_monitor import *
+import jubi_mysql as Mysql
 
 def get_days_ago_begin_time(t, n):
     """
@@ -26,16 +28,14 @@ def clean_coin_ticker():
         t = get_day_begin_time_int(now)
         seven_t = get_days_ago_begin_time(now, 7)
 
-        cursor = conn.cursor()
-        #cursor.execute("delete from jb_coin_ticker where (pk mod 60) != 0 and pk < %s", (t,))
-        cursor.execute("delete from jb_coin_ticker where (pk mod 600) != 0 and pk < %s", (seven_t,))
+        with Mysql.pool as db:
+            cursor = db.cursor
+            cursor.execute("delete from jb_coin_ticker where (pk mod 600) != 0 and pk < %s", (seven_t,))
+            db.conn.commit()
     except Exception:
         exstr = traceback.format_exc()
         logger.error("clean_coin_ticker failed")
         logger.error(exstr)
-    finally:
-        conn.commit()
-        cursor.close()
 
 @monitor("clean_coin_rate")
 def clean_coin_rate():
@@ -45,17 +45,17 @@ def clean_coin_rate():
     """
     try:
         now = time.time()
+        three_t = get_days_ago_begin_time(now, 3)
         seven_t = get_days_ago_begin_time(now, 7)
 
-        cursor = conn.cursor()
-        cursor.execute("delete from jb_coin_rate where (pk mod 600) != 0 and pk < %s", (seven_t,))
+        with Mysql.pool as db:
+            cursor = db.cursor
+            cursor.execute("delete from jb_coin_rate where (pk mod 600) != 0 and pk < %s", (three_t,))
+            db.conn.commit()
     except Exception:
         exstr = traceback.format_exc()
         logger.error("clean_coin_ticker failed")
         logger.error(exstr)
-    finally:
-        conn.commit()
-        cursor.close()
 
 @monitor("clean_coin_depth")
 def clean_coin_depth():
@@ -66,22 +66,20 @@ def clean_coin_depth():
     try:
         now = time.time()
         t = get_days_ago_begin_time(now, 3)
-        cursor = conn.cursor()
-        cursor.execute("delete from jb_coin_depth where pk < %s", (t,))
+        with Mysql.pool as db:
+            cursor = db.cursor
+            cursor.execute("delete from jb_coin_depth where pk < %s", (t,))
+            db.conn.commit()
     except Exception:
         exstr = traceback.format_exc()
         logger.error("clean_coin_ticker failed")
         logger.error(exstr)
-    finally:
-        conn.commit()
-        cursor.close()
 
 def do_clean():
     """
     清理数据
     :return: 
     """
-    logger.info("clean job started")
     clean_coin_ticker()
     clean_coin_rate()
     clean_coin_depth()

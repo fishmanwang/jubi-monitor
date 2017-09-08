@@ -1,15 +1,13 @@
 #coding=utf-8
 import json
-import time
 import random
 import traceback
 from urllib import request
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-from jubi_common import cm_monitor
-from jubi_common import RedisPool
-from jubi_common import logger
+from jubi_aop_monitor import *
+from jubi_redis import *
 
 headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 
                     (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'''}

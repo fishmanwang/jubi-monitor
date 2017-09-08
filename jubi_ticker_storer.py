@@ -1,7 +1,9 @@
 #coding=utf-8
 import traceback
 
-from jubi_common import *
+from jubi_redis import *
+import jubi_mysql as Mysql
+from jubi_aop_monitor import *
 
 tickers_map_key = "tickers_map_key"
 last_pk = 0  # 最后一次抓取时间
@@ -9,10 +11,10 @@ last_pk = 0  # 最后一次抓取时间
 
 def add_ticker(ts):
     sql = 'insert into jb_coin_ticker(pk, coin, price) values(%s, %s, %s)'
-    c = conn.cursor()
-    c.executemany(sql, ts)
-    conn.commit()
-    c.close()
+    with Mysql.pool as db:
+        c = db.cursor
+        c.executemany(sql, ts)
+        db.conn.commit()
 
 def init_last_pk():
     """
@@ -20,11 +22,12 @@ def init_last_pk():
     :return: 
     """
     global last_pk
-    c = conn.cursor()
-    c.execute("select pk from jb_coin_ticker order by pk desc limit 1")
-    d = c.fetchone()
-    if d:
-        last_pk = d[0]
+    with Mysql.pool as db:
+        c = db.cursor
+        c.execute("select pk from jb_coin_ticker order by pk desc limit 1")
+        d = c.fetchone()
+        if d:
+            last_pk = d[0]
 
 def store():
     init_last_pk()
@@ -37,7 +40,7 @@ def store():
                 ik = int(key)
                 if ik > last_pk:
                     data = RedisPool.conn.hget(tickers_map_key, key)
-                    __do_store(data.decode())
+                    __do_store(data)
                     last_pk = ik
             for key in keys:
                 ik = int(key)

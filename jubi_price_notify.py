@@ -1,12 +1,12 @@
-import smtplib
-from email.mime.text import MIMEText
 import traceback
 from apscheduler import events
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-from jubi_common import *
 from jubi_common_func import send_email
 from jubi_common_func import all_coin_key
+from jubi_redis import *
+import jubi_mysql as Mysql
+from jubi_aop_monitor import *
 
 def __get_all_coins():
     """
@@ -15,17 +15,16 @@ def __get_all_coins():
     """
     coins = RedisPool.conn.get(all_coin_key)
     if coins is None:
-        cursor = conn.cursor()
-        cursor.execute("select code, name from jb_coin")
-        ds = cursor.fetchall()
-        conn.commit()
-        cursor.close()
-        coins = {}
-        for d in ds:
-            code = d[0]
-            name = d[1]
-            coins[code] = name
-        RedisPool.conn.set(all_coin_key, str(coins), nx=True, ex=3600)
+        with Mysql.pool as db:
+            cursor = db.cursor
+            cursor.execute("select code, name from jb_coin")
+            ds = cursor.fetchall()
+            coins = {}
+            for d in ds:
+                code = d[0]
+                name = d[1]
+                coins[code] = name
+            RedisPool.conn.set(all_coin_key, str(coins), nx=True, ex=3600)
     if type(coins) != dict:
         coins = eval(coins)
     return coins
@@ -39,39 +38,15 @@ def get_candidate_price_notify_info(coin, price):
     :return: (id, user_id)
     """
     us = []
-    cursor = conn.cursor()
-    cursor.execute("select id, user_id from jb_price_notify \
-                    where coin=%s and ((price <=%s AND price > 0) OR (price <= %s AND price < 0))",
-                   (coin, price, 0-price))
-    if cursor.rowcount > 0:
-        us = cursor.fetchall()
-
-    conn.commit()
-    cursor.close()
+    with Mysql.pool as db:
+        cursor = db.cursor
+        cursor.execute("select id, user_id from jb_price_notify \
+                        where coin=%s and ((price <=%s AND price > 0) OR (price <= %s AND price < 0))",
+                       (coin, price, 0-price))
+        if cursor.rowcount > 0:
+            us = cursor.fetchall()
     return us
 
-def __get_notify_info(user_id, coin, name, price):
-    """
-    获取通知内容
-    :param user_id: 用户ID
-    :param coin: xas
-    :param name: 阿希币
-    :param price: 价格
-    :return: tuple - (user_id, content)
-    """
-    cursor = conn.cursor()
-    cursor.execute('select nickname, email from zx_account where user_id=%s', user_id)
-    if cursor.rowcount == 0:
-        return
-    d = cursor.fetchone()
-    conn.commit()
-    cursor.close()
-
-    nickname = d[0]
-    email = d[1]
-    content = '{}({})当前价格为 {} 元，请知悉。'.format(name, coin, price)
-    r = (user_id, content)
-    return r
 
 def coin_notify(coin, name):
     """
@@ -110,10 +85,10 @@ def __delete_price_notify(ids):
     :param ids: list 
     :return: 
     """
-    cursor = conn.cursor()
-    cursor.execute('delete from jb_price_notify where id in %s', (ids, ))
-    conn.commit()
-    cursor.close()
+    with Mysql.pool as db:
+        cursor = db.cursor
+        cursor.execute('delete from jb_price_notify where id in %s', (ids, ))
+        db.conn.commit()
 
 @monitor("notify")
 def notify():
