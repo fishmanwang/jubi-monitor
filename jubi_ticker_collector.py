@@ -14,7 +14,6 @@ from jubi_common import logger
 headers = {"User-Agent": '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 
                     (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'''}
 
-current_tickers_key = "current_tickers_key"
 tickers_map_key = "tickers_map_key"
 span = 10  # 抓取时间间隔
 
@@ -46,7 +45,6 @@ class TickerCollector:
         logger.debug(t)
         if len(ps) == 0:
             return
-        # RedisPool.conn.set(current_tickers_key, ps, ex=3600)
         self.cache_current_tickers(tickers)
         ex = RedisPool.conn.hexists(tickers_map_key, t)
         logger.debug(ex)
