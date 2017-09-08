@@ -2,12 +2,11 @@ import time
 import datetime
 import traceback
 import smtplib
-import pymysql
 from email.mime.text import MIMEText
 
 from jubi_redis import *
 import jubi_mysql as Mysql
-from jubi_log import logger
+from jubi_aop_monitor import *
 from jubi_common_func import email_sending_queue_key
 from jubi_common_func import get_day_begin_time_int
 
@@ -26,7 +25,8 @@ def __send_email(user_id, subject, content, notify_type):
     content = nickname + ":\r\n" + content
 
     num = __get_user_email_send_count(user_id)
-    if (num >= 50 and (user_id not in unlimit_users)):
+    limit = __get_user_email_limit(user_id)
+    if num >= limit:
         __record(user_id, notify_type, email, False, content, '超限')
         return
 
@@ -36,6 +36,7 @@ def __send_email(user_id, subject, content, notify_type):
     __set_user_email_send_count(user_id, num+1)
 
 
+@monitor("发送邮件", long_time=100)
 def __do_send_email(email, subject, content):
     mail_host = 'smtp.163.com'
     mail_port = 465
@@ -85,6 +86,7 @@ def __get_uesr_info(user_id):
 
 cache_email_user_limit_key = "py_email_user_limit"
 
+
 def __get_user_email_send_count(user_id):
     """
     获取用户短信发送数量
@@ -94,6 +96,20 @@ def __get_user_email_send_count(user_id):
         num = 0
 
     return int(num)
+
+
+def __get_user_email_limit(user_id):
+    """
+    获取用户邮件限制
+    :param user_id: 
+    :return: 
+    """
+    with Mysql.pool as db:
+        db.cursor.execute("SELECT g.email_count FROM `zx_account` a LEFT JOIN `jb_user_grade` g ON a.grade = g.grade WHERE a.user_id=%s ", user_id)
+        if db.cursor.rowcount > 0:
+            return db.cursor.fetchone()[0]
+        else:
+            return 0
 
 
 def __set_user_email_send_count(user_id, num):
@@ -107,7 +123,7 @@ def __set_user_email_send_count(user_id, num):
 def __work():
     while True:
         try:
-            info = RedisPool.conn.blpop(email_sending_queue_key)  # (user_id, subject, content, notify_type)
+            info = RedisPool.rconn.blpop(email_sending_queue_key)  # (user_id, subject, content, notify_type)
             if not info:
                 continue
             info = eval(info[1])

@@ -68,4 +68,4 @@ def get_day_begin_time_int(t):
     return int(time.mktime(p))
 
 def send_email(user_id, subject, content, monitor_type) :
-    RedisPool.conn.rpush(email_sending_queue_key, (user_id, subject, content, monitor_type))
+    RedisPool.rconn.rpush(email_sending_queue_key, (user_id, subject, content, monitor_type))
